@@ -107,12 +107,13 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.8s ease-out, visibility 0.8s;
+      transition: opacity 0.8s cubic-bezier(0.65, 0, 0.35, 1), visibility 0.8s;
     }
 
     .splash-hidden {
       opacity: 0;
       visibility: hidden;
+      pointer-events: none;
     }
 
     .mesh-gradient-splash {
@@ -126,11 +127,32 @@
       z-index: -1;
     }
 
+    .glass-card-splash {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 48px;
+      box-shadow: 0 25px 50px -12px rgba(5, 150, 105, 0.1);
+      padding: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2.5rem;
+      transform: translateY(0);
+      animation: splash-float 4s infinite ease-in-out;
+    }
+
+    @keyframes splash-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
     @keyframes progress-splash { 0% { width: 0%; } 100% { width: 100%; } }
     @keyframes shine-splash { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
     .progress-bar-splash {
-      animation: progress-splash 1.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+      animation: progress-splash 2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
       position: relative;
       overflow: hidden;
     }
@@ -142,6 +164,15 @@
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
       animation: shine-splash 1s infinite linear;
     }
+
+    .pulse-soft {
+      animation: pulse-soft 3s infinite ease-in-out;
+    }
+
+    @keyframes pulse-soft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.95; }
+    }
   </style>
 </head>
 
@@ -150,9 +181,9 @@
   <!-- SPLASH SCREEN LOADING -->
   <div id="loadingSplash">
     <div class="mesh-gradient-splash"></div>
-    <div class="flex flex-col items-center gap-10">
+    <div class="glass-card-splash">
       <div class="relative">
-        <div class="absolute inset-0 bg-emerald-400/20 blur-3xl rounded-full animate-pulse"></div>
+        <div class="absolute inset-0 bg-emerald-400/20 blur-3xl rounded-full pulse-soft"></div>
         <div class="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[32px] flex items-center justify-center shadow-xl shadow-emerald-200/50 relative z-10">
           <i class="fa-solid fa-wallet text-4xl text-white"></i>
         </div>
@@ -164,6 +195,11 @@
       <div class="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div class="h-full bg-emerald-500 progress-bar-splash"></div>
       </div>
+    </div>
+    <div class="fixed bottom-12 flex flex-col items-center gap-2 opacity-40">
+        <p class="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">
+            Propulsé par <span class="text-slate-600">Antigravity AI</span>
+        </p>
     </div>
   </div>
 
