@@ -1181,6 +1181,55 @@
       }
     };
   </script>
+  <script>
+    // --- Installation Suggestion Popup ---
+    window.addEventListener('load', () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      const hasSeenPopup = localStorage.getItem('install_popup_seen');
+
+      if (!isStandalone && !hasSeenPopup) {
+        setTimeout(() => {
+          const popup = document.createElement('div');
+          popup.id = 'installPopup';
+          popup.className = 'fixed inset-x-4 bottom-24 z-[200] transform translate-y-full transition-transform duration-700 ease-out';
+          popup.innerHTML = `
+            <div class="bg-white rounded-[32px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-emerald-100 relative overflow-hidden">
+              <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full opacity-50"></div>
+              <div class="flex items-start gap-4 relative">
+                <div class="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-200">
+                  <i class="fa-solid fa-cloud-arrow-down text-white text-2xl"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="text-gray-800 font-bold text-lg leading-tight mb-1">Installer l'application</h4>
+                  <p class="text-gray-400 text-xs font-medium leading-relaxed">Profitez d'un accès rapide, du mode hors-ligne et d'une expérience plein écran.</p>
+                </div>
+              </div>
+              <div class="flex gap-3 mt-6">
+                <button onclick="closeInstallPopup(true)" class="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition">Plus tard</button>
+                <button onclick="goToInstall()" class="flex-2 bg-emerald-600 text-white px-8 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-200 active:scale-95 transition">Installer</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(popup);
+          requestAnimationFrame(() => popup.classList.remove('translate-y-full'));
+        }, 3000);
+      }
+    });
+
+    window.goToInstall = () => {
+      localStorage.setItem('install_popup_seen', 'true');
+      nav('telechargement.html');
+    };
+
+    window.closeInstallPopup = (neverAgain = false) => {
+      if (neverAgain) localStorage.setItem('install_popup_seen', 'true');
+      const p = document.getElementById('installPopup');
+      if (p) {
+        p.classList.add('translate-y-[150%]');
+        setTimeout(() => p.remove(), 700);
+      }
+    };
+  </script>
   <script src="tutorial.js"></script>
 </body>
 
