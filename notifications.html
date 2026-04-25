@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Notifications</title>
+  <script src="js/tailwind.js"></script>
+  <link rel="stylesheet" href="fontawesome/css/all.min.css">
+  <style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
+
+    <!-- HEADER -->
+    <div class="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg sticky top-0 z-20">
+      <div class="flex items-center gap-4 mb-6">
+        <button onclick="window.location.href='index.html'" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center active:scale-90 transition border border-white/10 backdrop-blur-sm">
+          <i class="fa-solid fa-arrow-left text-lg"></i>
+        </button>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight">Notifications</h1>
+          <p class="text-emerald-100/70 text-[10px] font-bold uppercase tracking-widest">Alertes et Rappels</p>
+        </div>
+      </div>
+      
+      <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/10 flex justify-between items-center">
+        <div>
+          <p id="unreadCount" class="text-2xl font-black tabular-nums">0</p>
+          <p class="text-emerald-100/60 text-[9px] font-black uppercase tracking-widest">Non lues</p>
+        </div>
+        <button onclick="markAllAsRead()" class="bg-white/20 px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition border border-white/10">Tout marquer</button>
+      </div>
+    </div>
+
+    <!-- NOTIF LIST -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide px-6 pt-6 pb-24">
+      <div id="notifList" class="space-y-4">
+        <!-- Loader -->
+        <div class="animate-pulse flex gap-4">
+          <div class="w-12 h-12 bg-gray-100 rounded-2xl"></div>
+          <div class="flex-1 space-y-2 py-1">
+            <div class="h-4 bg-gray-100 rounded-full w-3/4"></div>
+            <div class="h-3 bg-gray-50 rounded-full w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FLOATING ASSISTANT BUTTON (DRAGGABLE) -->
+  <div id="assistantFab" 
+       class="fixed bottom-24 left-6 w-16 h-16 bg-emerald-600 text-white rounded-full shadow-[0_10px_40px_rgba(16,185,129,0.4)] flex items-center justify-center active:scale-95 transition-transform z-[100] ring-4 ring-emerald-600/20 touch-none cursor-move">
+    <i class="fa-solid fa-robot text-2xl"></i>
+  </div>
+
+  <!-- NAVIGATION BAR -->
+  <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-t-[30px] shadow-2xl">
+    <button onclick="window.location.href='index.html'" class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+      <div class="p-2">
+        <i class="fa-solid fa-house-chimney text-lg"></i>
+      </div>
+      <span class="text-[9px] font-black uppercase tracking-widest">Accueil</span>
+    </button>
+    <button onclick="window.location.href='index.html'" class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+      <div class="p-2">
+        <i class="fa-solid fa-wallet text-lg"></i>
+      </div>
+      <span class="text-[9px] font-black uppercase tracking-widest">Wallets</span>
+    </button>
+    <button onclick="window.location.href='history.html'" class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+      <div class="p-2">
+        <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+      </div>
+      <span class="text-[9px] font-black uppercase tracking-widest">Historique</span>
+    </button>
+  </div>
+
+  <script>
+    // Drag logic for FAB
+    const fab = document.getElementById('assistantFab');
+    let isDragging = false;
+    let startX, startY, initialX, initialY;
+
+    fab.addEventListener('touchstart', (e) => {
+      isDragging = false;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      const rect = fab.getBoundingClientRect();
+      initialX = rect.left;
+      initialY = rect.top;
+    });
+
+    fab.addEventListener('touchmove', (e) => {
+      isDragging = true;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      fab.style.left = (initialX + dx) + 'px';
+      fab.style.top = (initialY + dy) + 'px';
+      fab.style.bottom = 'auto';
+      e.preventDefault();
+    });
+
+    fab.addEventListener('touchend', (e) => {
+      if (!isDragging) {
+        window.location.href = 'assistant.html';
+      }
+    });
+
+    const db = (function() {
+      let dbInstance = null;
+      async function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open("PortefeuilleDB", 4);
+          request.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
+          request.onerror = (e) => reject(e.target.error);
+        });
+      }
+      async function getDB() { if (dbInstance) return dbInstance; return await initDB(); }
+      
+      return {
+        getNotifications: async () => {
+          const d = await getDB();
+          return new Promise(r => d.transaction("notifications","readonly").objectStore("notifications").getAll().onsuccess = e => r(e.target.result.sort((a,b)=>b.date-a.date)));
+        },
+        markAsRead: async (id) => {
+          const d = await getDB();
+          const tx = d.transaction("notifications", "readwrite");
+          const store = tx.objectStore("notifications");
+          const n = await new Promise(r => store.get(id).onsuccess = e => r(e.target.result));
+          if(n) { n.read = true; store.put(n); }
+          return new Promise(r => tx.oncomplete = r);
+        },
+        clearAll: async () => {
+          const d = await getDB();
+          const tx = d.transaction("notifications", "readwrite");
+          tx.objectStore("notifications").clear();
+          return new Promise(r => tx.oncomplete = r);
+        }
+      };
+    })();
+
+    window.onload = async () => {
+      await refresh();
+    };
+
+    async function refresh() {
+      const notifs = await db.getNotifications();
+      const list = document.getElementById("notifList");
+      const unreadEl = document.getElementById("unreadCount");
+      
+      const unreadCount = notifs.filter(n => !n.read).length;
+      unreadEl.textContent = unreadCount;
+
+      if(notifs.length === 0) {
+        list.innerHTML = `
+          <div class="py-20 text-center">
+            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fa-solid fa-bell-slash text-gray-200 text-3xl"></i>
+            </div>
+            <p class="text-gray-400 text-sm font-bold">Aucune notification</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = notifs.map(n => `
+        <div class="p-4 rounded-[28px] border ${n.read ? 'bg-white border-gray-100 opacity-60' : 'bg-emerald-50/30 border-emerald-100 shadow-sm'} flex gap-4 items-start transition-all">
+          <div class="w-12 h-12 ${n.type === 'alert' ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'} rounded-2xl flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid ${n.type === 'alert' ? 'fa-triangle-exclamation' : 'fa-calendar-check'} text-lg"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start mb-1">
+              <h4 class="font-bold text-gray-800 text-sm leading-tight">${n.title}</h4>
+              <span class="text-[9px] font-bold text-gray-400 uppercase">${new Date(n.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+            <p class="text-xs text-gray-500 leading-relaxed">${n.message}</p>
+            <div class="flex justify-between items-center mt-2">
+              <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">${new Date(n.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short'})}</p>
+              ${!n.read ? `
+                <button onclick="readNotif(${n.id})" class="flex items-center gap-1.5 text-emerald-600 font-black text-[10px] uppercase tracking-wider bg-emerald-100/50 px-3 py-1.5 rounded-lg active:scale-90 transition">
+                  <i class="fa-solid fa-circle-check"></i> Lu
+                </button>
+              ` : `
+                <span class="text-gray-400 font-bold text-[9px] uppercase"><i class="fa-solid fa-check-double"></i> Lu</span>
+              `}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function readNotif(id) {
+      await db.markAsRead(id);
+      await refresh();
+      // On prévient l'accueil si besoin
+      if(window.opener && window.opener.refreshUI) window.opener.refreshUI();
+    }
+
+    async function markAllAsRead() {
+      const d = await indexedDB.open("PortefeuilleDB", 4);
+      d.onsuccess = async (e) => {
+        const database = e.target.result;
+        const tx = database.transaction("notifications", "readwrite");
+        const store = tx.objectStore("notifications");
+        const all = await new Promise(r => store.getAll().onsuccess = ev => r(ev.target.result));
+        for(const n of all) {
+          if(!n.read) {
+            n.read = true;
+            store.put(n);
+          }
+        }
+        tx.oncomplete = () => {
+          refresh();
+          if(window.opener && window.opener.refreshUI) window.opener.refreshUI();
+        };
+      };
+    }
+  </script>
+</body>
+</html>

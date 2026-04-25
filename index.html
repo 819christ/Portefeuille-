@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portefeuille</title>
+  <script src="js/tailwind.js"></script>
+  <link rel="stylesheet" href="fontawesome/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#059669">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <style>
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .btn-active:active {
+      transform: scale(0.96);
+    }
+
+    .balance-masked {
+      letter-spacing: 0.1em;
+      font-family: inherit;
+    }
+
+    html {
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
+    }
+
+    /* Bottom Sheet Animation */
+    #actionSheet {
+      transition: visibility 0.3s, opacity 0.3s;
+    }
+
+    #actionSheetContent {
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sheet-hidden {
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sheet-content-hidden {
+      transform: translateY(100%);
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: fixed;
+      z-index: 100;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      min-width: 150px;
+      display: none;
+      transform: scale(0.9);
+      opacity: 0;
+      transition: all 0.2s;
+    }
+
+    .context-menu.active {
+      display: block;
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    /* Select Styles */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    /* Overlay Animation */
+    .overlay-in {
+      animation: overlayIn 0.3s ease-out forwards;
+    }
+
+    @keyframes overlayIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen font-sans selection:bg-emerald-100">
+
+  <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
+
+    <!-- HEADER -->
+    <div class="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg sticky top-0 z-20">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+            <i class="fa-solid fa-wallet text-2xl"></i>
+          </div>
+          <h1 class="text-xl font-bold tracking-tight">Mon Portefeuille</h1>
+        </div>
+          <button onclick="nav('telechargement.html')"
+            class="bg-white/20 w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/10 active:scale-90 transition"
+            title="Installer l'application">
+            <i class="fa-solid fa-cloud-arrow-down text-lg"></i>
+          </button>
+          <button onclick="nav('notifications.html')"
+            class="relative bg-white/20 w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/10 active:scale-90 transition">
+            <i class="fa-solid fa-bell text-lg"></i>
+            <span id="notifBadge"
+              class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-emerald-600 rounded-full"></span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-end justify-between">
+        <div>
+          <p class="text-emerald-100 text-sm font-medium mb-1 tracking-wide">Solde total</p>
+          <div class="flex items-baseline gap-2">
+            <h2 id="totalBalance" class="text-4xl font-bold tabular-nums tracking-tight">0 FCFA</h2>
+          </div>
+        </div>
+
+        <button onclick="toggleBalance()" id="eyeButton"
+          class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 mb-1 backdrop-blur-sm border border-white/10">
+          <i class="fa-solid fa-eye text-xl"></i>
+        </button>
+      </div>
+
+      <p id="currentDate" class="text-emerald-100/80 text-[10px] mt-4 font-bold uppercase tracking-[0.2em] opacity-80">
+        chargement...</p>
+    </div>
+
+    <!-- MAIN SCROLL AREA -->
+    <div class="flex-1 overflow-y-auto">
+
+      <!-- MES PORTEFEUILLES -->
+      <div class="pt-8 px-6">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="font-bold text-gray-800 text-lg">Mes portefeuilles</h3>
+          <button onclick="createNewWallet()"
+            class="text-emerald-600 bg-emerald-50 px-4 py-2 rounded-2xl flex items-center gap-2 text-sm font-bold btn-active transition-all">
+            <i class="fa-solid fa-plus-circle"></i> Nouveau
+          </button>
+        </div>
+
+        <div id="walletsList" class="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-6 px-6">
+          <!-- Les portefeuilles seront injectés ici -->
+          <div class="animate-pulse bg-gray-100 w-80 h-44 rounded-[32px] flex-shrink-0"></div>
+          <div class="animate-pulse bg-gray-100 w-80 h-44 rounded-[32px] flex-shrink-0"></div>
+        </div>
+      </div>
+
+      <!-- PLANIFICATIONS -->
+      <div class="px-6 py-4 pb-32">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+            À faire aujourd'hui
+            <span id="planCount"
+              class="bg-emerald-100 text-emerald-600 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+          </h3>
+          <button class="text-emerald-600 text-xs font-bold">Voir tout</button>
+        </div>
+
+        <div id="plansList" class="space-y-4">
+          <!-- Les planifications seront injectées ici -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FLOATING ACTION BUTTON (FAB) -->
+    <button onclick="openQuickTransaction()"
+      class="fixed bottom-24 right-6 w-14 h-14 bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-200 flex items-center justify-center z-40 btn-active transition-all ring-4 ring-white">
+      <i class="fa-solid fa-plus text-2xl"></i>
+    </button>
+
+    <!-- CONTEXT MENU -->
+    <div id="contextMenu" class="context-menu border border-gray-100">
+      <button onclick="handleContextEdit()"
+        class="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 rounded-xl">
+        <i class="fa-solid fa-pen text-emerald-600"></i> Modifier
+      </button>
+      <button onclick="handleContextDelete()"
+        class="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 flex items-center gap-3 rounded-xl">
+        <i class="fa-solid fa-trash"></i> Supprimer
+      </button>
+    </div>
+
+    <!-- UNIFIED BOTTOM SHEET -->
+    <div id="actionSheet" class="fixed inset-0 z-[100] sheet-hidden">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeSheet()"></div>
+      <div id="actionSheetContent"
+        class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-[40px] shadow-2xl p-8 sheet-content-hidden flex flex-col max-h-[90vh]">
+        <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 flex-shrink-0"></div>
+
+        <div id="sheetStep1" class="space-y-6">
+          <h3 class="text-xl font-bold text-center text-gray-800">Sélectionner un portefeuille</h3>
+          <div id="walletSelectorList" class="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
+            <!-- Portefeuilles injectés ici -->
+          </div>
+        </div>
+
+        <div id="sheetStep2" class="hidden space-y-6">
+          <div class="flex items-center gap-4 mb-2">
+            <button onclick="prevStep()" class="text-gray-400"><i class="fa-solid fa-arrow-left"></i></button>
+            <h3 class="text-xl font-bold text-gray-800">Choisir une action</h3>
+          </div>
+          <div class="grid grid-cols-1 gap-3">
+            <button onclick="showForm('deposit')"
+              class="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-700 font-bold active:scale-95 transition">
+              <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center"><i
+                  class="fa-solid fa-arrow-up"></i></div>
+              Ajouter de l'argent
+            </button>
+            <button onclick="showForm('withdrawal')"
+              class="flex items-center gap-4 p-4 bg-red-50 rounded-2xl border border-red-100 text-red-600 font-bold active:scale-95 transition">
+              <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center"><i
+                  class="fa-solid fa-arrow-down"></i></div>
+              Retirer de l'argent
+            </button>
+            <button onclick="showForm('plan')"
+              class="flex items-center gap-4 p-4 bg-orange-50 rounded-2xl border border-orange-100 text-orange-600 font-bold active:scale-95 transition">
+              <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center"><i
+                  class="fa-solid fa-calendar-check"></i></div>
+              Créer une planification
+            </button>
+          </div>
+        </div>
+
+        <div id="sheetForm" class="hidden flex-1 overflow-y-auto scrollbar-hide">
+          <div class="flex items-center gap-4 mb-6">
+            <button id="backBtn" onclick="backToActions()" class="text-gray-400"><i
+                class="fa-solid fa-arrow-left"></i></button>
+            <h3 id="formTitle" class="text-xl font-bold text-gray-800">Transaction</h3>
+          </div>
+
+          <div class="space-y-4 pb-6">
+            <!-- Formulaire Wallet -->
+            <div id="walletForm" class="hidden space-y-4">
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nom du
+                  portefeuille</label>
+                <input type="text" id="walletNameInput" placeholder="ex: Mobile Money"
+                  class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none border-2 border-transparent focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Description /
+                  Précision</label>
+                <input type="text" id="walletDescInput" placeholder="N° de téléphone, usage..."
+                  class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-medium outline-none border-2 border-transparent focus:border-emerald-500">
+              </div>
+            </div>
+
+            <!-- Formulaire Transaction -->
+            <div id="txForm" class="space-y-4">
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Montant (FCFA)</label>
+                <input type="number" id="formAmount" placeholder="0"
+                  class="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white rounded-2xl p-4 text-xl font-bold outline-none">
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Motif /
+                  Précision</label>
+                <input type="text" id="formReason" placeholder="Note rapide..."
+                  class="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white rounded-2xl p-4 text-sm font-medium outline-none">
+              </div>
+            </div>
+
+            <!-- Formulaire Planification -->
+            <div id="planForm" class="hidden space-y-4">
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nom de la
+                  planification</label>
+                <input type="text" id="planName" placeholder="ex: Loyer"
+                  class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Description /
+                  Précision</label>
+                <textarea id="planDesc" placeholder="Détails importants..."
+                  class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-medium outline-none h-20"></textarea>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Montant</label>
+                  <input type="number" id="planAmount" placeholder="0"
+                    class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Type</label>
+                  <select id="planType" class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+                    <option value="withdrawal">Retrait</option>
+                    <option value="deposit">Dépôt</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Date de départ</label>
+                <input type="date" id="planDate"
+                  class="w-full bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Fréquence</label>
+                <div class="flex gap-2">
+                  <input type="number" id="planFreqVal" placeholder="Ex: 1"
+                    class="w-20 bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+                  <select id="planFreqUnit" class="flex-1 bg-gray-50 rounded-2xl p-4 text-sm font-bold outline-none">
+                    <option value="none">Aucune (une fois)</option>
+                    <option value="days">Jours</option>
+                    <option value="weeks">Semaines</option>
+                    <option value="months">Mois</option>
+                    <option value="years">Années</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="submitForm()" id="formSubmitBtn"
+              class="w-full bg-emerald-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all mt-4">
+              Enregistrer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VALIDATION MODAL -->
+    <div id="validationModal" style="display:none" class="fixed inset-0 z-[300] items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeValidationModal()"></div>
+      <div class="bg-white rounded-[32px] p-6 shadow-2xl relative w-full max-w-sm overlay-in border border-gray-100">
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Valider l'opération</h3>
+        <p id="validationPlanName" class="text-sm font-bold text-gray-500 mb-6"></p>
+        <div class="mb-6">
+          <label class="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Motif / Description <span
+              id="validationMotifAsterisk" class="text-red-500">*</span></label>
+          <input type="text" id="validationMotif"
+            class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition"
+            placeholder="Ex: Loyer du mois...">
+        </div>
+        <div class="flex gap-3">
+          <button onclick="closeValidationModal()"
+            class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-sm active:scale-95 transition">Annuler</button>
+          <button onclick="confirmValidation()"
+            class="flex-1 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition shadow-lg shadow-emerald-200">Confirmer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE MODAL -->
+    <div id="deleteModal" style="display:none" class="fixed inset-0 z-[300] items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+      <div class="bg-white rounded-[32px] p-6 shadow-2xl relative w-full max-w-sm overlay-in border border-gray-100">
+        <div class="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <i class="fa-solid fa-trash-can text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 text-center mb-2">Supprimer l'élément</h3>
+        <p class="text-sm font-medium text-gray-500 text-center mb-6">Pour confirmer la suppression de <span
+            id="deleteItemName" class="font-bold text-gray-800"></span>, tapez son nom exact ci-dessous.</p>
+        <div class="mb-6">
+          <input type="text" id="deleteConfirmInput"
+            class="w-full bg-red-50/50 border border-red-100 rounded-2xl px-4 py-3 text-sm font-bold text-red-700 outline-none focus:border-red-500 focus:ring-4 focus:ring-red-50 transition text-center"
+            placeholder="Nom de l'élément...">
+        </div>
+        <div class="flex gap-3">
+          <button onclick="closeDeleteModal()"
+            class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-sm active:scale-95 transition">Annuler</button>
+          <button onclick="confirmDelete()"
+            class="flex-1 py-3 bg-red-500 text-white rounded-2xl font-bold text-sm active:scale-95 transition shadow-lg shadow-red-200">Supprimer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR MODAL -->
+    <div id="errorModal" style="display:none" class="fixed inset-0 z-[400] items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeErrorModal()"></div>
+      <div
+        class="bg-white rounded-[32px] p-6 shadow-2xl relative w-full max-w-sm overlay-in border border-gray-100 text-center">
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4 mx-auto">
+          <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Opération refusée</h3>
+        <p id="errorMessage" class="text-sm font-medium text-gray-500 mb-8 px-4"></p>
+        <button onclick="closeErrorModal()"
+          class="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm active:scale-95 transition shadow-lg shadow-gray-200">Compris</button>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION OVERLAY -->
+    <div id="descOverlay" style="display:none" class="fixed inset-0 z-[200] items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeDesc()"></div>
+      <div class="bg-white rounded-[32px] p-8 shadow-2xl relative max-w-sm w-full border border-gray-100 overlay-in">
+        <button onclick="closeDesc()"
+          class="absolute top-4 right-4 w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center active:scale-90 transition shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-2 h-6 bg-emerald-500 rounded-full"></div>
+          <h4 class="text-gray-400 text-[10px] font-black uppercase tracking-widest">Description complète</h4>
+        </div>
+        <div id="descFullText"
+          class="text-gray-700 text-sm font-medium leading-relaxed max-h-56 overflow-y-auto scrollbar-hide"></div>
+      </div>
+    </div>
+
+    <!-- FLOATING ASSISTANT BUTTON (DRAGGABLE) -->
+    <div id="assistantFab"
+      class="fixed bottom-24 left-6 w-16 h-16 bg-emerald-600 text-white rounded-full shadow-[0_10px_40px_rgba(16,185,129,0.4)] flex items-center justify-center active:scale-95 transition-transform z-[100] ring-4 ring-emerald-600/20 touch-none cursor-move">
+      <i class="fa-solid fa-robot text-2xl"></i>
+    </div>
+
+    <script>
+      // Drag logic for FAB
+      const fab = document.getElementById('assistantFab');
+      let isDragging = false;
+      let startX, startY, initialX, initialY;
+
+      fab.addEventListener('touchstart', (e) => {
+        isDragging = false;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        const rect = fab.getBoundingClientRect();
+        initialX = rect.left;
+        initialY = rect.top;
+      });
+
+      fab.addEventListener('touchmove', (e) => {
+        isDragging = true;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        fab.style.left = (initialX + dx) + 'px';
+        fab.style.top = (initialY + dy) + 'px';
+        fab.style.bottom = 'auto';
+        e.preventDefault();
+      });
+
+      fab.addEventListener('touchend', (e) => {
+        if (!isDragging) {
+          window.location.href = 'assistant.html';
+        }
+      });
+    </script>
+
+    <!-- NAVIGATION BAR -->
+    <div
+      class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-t-[30px] shadow-2xl">
+      <button onclick="nav('index.html')"
+        class="text-emerald-600 flex flex-col items-center gap-1.5 transition-all">
+        <div class="bg-emerald-50 p-2 rounded-xl">
+          <i class="fa-solid fa-house-chimney text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Accueil</span>
+      </button>
+      <button onclick="goToLastWallet()"
+        class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+        <div class="p-2">
+          <i class="fa-solid fa-wallet text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Wallets</span>
+      </button>
+      <button onclick="nav('history.html')"
+        class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+        <div class="p-2">
+          <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Historique</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // GLOBAL HELPERS
+    window._desc = [];
+    window._trunc = (t, n = 38) => t && t.length > n ? t.slice(0, n) + '...' : (t || '');
+
+    // NOTIFICATIONS SYSTEM
+    const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    async function requestNotifPermission() {
+      if ("Notification" in window) {
+        if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+          await Notification.requestPermission();
+        }
+      }
+    }
+
+    window.notify = async (title, body) => {
+      if ("Notification" in window && Notification.permission === "granted") {
+        const registration = await navigator.serviceWorker.ready;
+        registration.showNotification(title, {
+          body,
+          icon: 'assets/icon.png',
+          badge: 'assets/icon.png',
+          vibrate: [200, 100, 200]
+        });
+        notifSound.play().catch(() => { });
+      } else {
+        console.log("Notif (No perm):", title, body);
+      }
+    };
+
+    // ==========================================
+    // DB.JS INLINED FOR LOCAL COMPATIBILITY (CORS FIX)
+    // ==========================================
+    window.db = (function () {
+      let dbInstance = null;
+      async function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open("PortefeuilleDB", 4);
+          request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains("wallets")) d.createObjectStore("wallets", { keyPath: "id", autoIncrement: true });
+            if (!d.objectStoreNames.contains("transactions")) d.createObjectStore("transactions", { keyPath: "id", autoIncrement: true }).createIndex("walletId", "walletId", { unique: false });
+            if (!d.objectStoreNames.contains("planifications")) d.createObjectStore("planifications", { keyPath: "id", autoIncrement: true }).createIndex("walletId", "walletId", { unique: false });
+            if (!d.objectStoreNames.contains("notifications")) d.createObjectStore("notifications", { keyPath: "id", autoIncrement: true });
+            if (!d.objectStoreNames.contains("chat_history")) d.createObjectStore("chat_history", { keyPath: "id", autoIncrement: true });
+          };
+          request.onsuccess = (event) => { dbInstance = event.target.result; resolve(dbInstance); };
+          request.onerror = (event) => reject(event.target.error);
+        });
+      }
+      async function getDB() { if (dbInstance) return dbInstance; return await initDB(); }
+
+      // WALLETS
+      async function createWallet(name, description = "") {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("wallets", "readwrite");
+        const request = tx.objectStore("wallets").add({ name, description, balance: 0, createdAt: Date.now() });
+        return new Promise(r => request.onsuccess = () => r(request.result));
+      }
+      async function updateWallet(id, data) {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("wallets", "readwrite");
+        const store = tx.objectStore("wallets");
+        const wallet = await new Promise(r => store.get(id).onsuccess = e => r(e.target.result));
+        Object.assign(wallet, data);
+        store.put(wallet);
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function deleteWallet(id) {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction(["wallets", "transactions", "planifications"], "readwrite");
+        tx.objectStore("wallets").delete(id);
+        // Nettoyage cascade (optionnel mais recommandé)
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function getAllWallets() {
+        const dbLocal = await getDB();
+        return new Promise(r => dbLocal.transaction("wallets", "readonly").objectStore("wallets").getAll().onsuccess = e => r(e.target.result));
+      }
+      async function getWalletById(id) {
+        const dbLocal = await getDB();
+        return new Promise(r => dbLocal.transaction("wallets", "readonly").objectStore("wallets").get(id).onsuccess = e => r(e.target.result));
+      }
+
+      // TRANSACTIONS
+      async function updateWalletBalance(walletId, amount, type) {
+        const wallet = await getWalletById(walletId);
+        if (!wallet) return;
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("wallets", "readwrite");
+        wallet.balance += (type === "deposit" ? amount : -amount);
+        tx.objectStore("wallets").put(wallet);
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function saveNotification(title, message, type = 'info') {
+        const d = await getDB();
+        const tx = d.transaction("notifications", "readwrite");
+        tx.objectStore("notifications").add({ title, message, type, date: Date.now(), read: false });
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function getUnreadNotifCount() {
+        const d = await getDB();
+        const notifs = await new Promise(r => d.transaction("notifications").objectStore("notifications").getAll().onsuccess = e => r(e.target.result));
+        return notifs.filter(n => !n.read).length;
+      }
+      async function addTransaction(walletId, amount, type, reason = "") {
+        const wallet = await getWalletById(walletId);
+        if (type === 'withdrawal' && wallet.balance < amount) {
+          throw new Error("Solde insuffisant dans ce portefeuille.");
+        }
+        await updateWalletBalance(walletId, amount, type);
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("transactions", "readwrite");
+        tx.objectStore("transactions").add({ walletId, type, amount: Math.abs(amount), reason, date: Date.now() });
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function getWalletHistory(walletId) {
+        const dbLocal = await getDB();
+        return new Promise(r => dbLocal.transaction("transactions", "readonly").objectStore("transactions").index("walletId").getAll(IDBKeyRange.only(walletId)).onsuccess = e => r(e.target.result.sort((a, b) => b.date - a.date)));
+      }
+
+      // PLANIFICATIONS
+      async function createPlanification(data) {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("planifications", "readwrite");
+        data.createdAt = Date.now();
+        data.status = data.status || "pending";
+        data.nextDueDate = calculateNextDate(data.startDate, data.freqVal, data.freqUnit);
+        tx.objectStore("planifications").add(data);
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function updatePlanification(id, data) {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("planifications", "readwrite");
+        const store = tx.objectStore("planifications");
+        const plan = await new Promise(r => store.get(id).onsuccess = e => r(e.target.result));
+        Object.assign(plan, data);
+        if (data.startDate || data.freqVal) plan.nextDueDate = calculateNextDate(plan.startDate, plan.freqVal, plan.freqUnit);
+        store.put(plan);
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function deletePlanification(id) {
+        const dbLocal = await getDB();
+        const tx = dbLocal.transaction("planifications", "readwrite");
+        tx.objectStore("planifications").delete(id);
+        return new Promise(r => tx.oncomplete = r);
+      }
+      async function getAllPlanifications() {
+        const dbLocal = await getDB();
+        return new Promise(r => dbLocal.transaction("planifications", "readonly").objectStore("planifications").getAll().onsuccess = e => r(e.target.result));
+      }
+      async function validatePlanification(id, motif) {
+        const dbLocal = await getDB();
+        // 1. Lire le plan (transaction readonly)
+        const plan = await new Promise((r, rej) => {
+          const txRead = dbLocal.transaction("planifications", "readonly");
+          const req = txRead.objectStore("planifications").get(id);
+          req.onsuccess = e => r(e.target.result);
+          req.onerror = () => rej(new Error("Erreur lecture plan"));
+        });
+        if (!plan) return;
+
+        // 2. Exécuter la transaction (cela ouvre ses propres transactions dans addTransaction)
+        await addTransaction(plan.walletId, plan.amount, plan.type, motif || plan.label);
+
+        // 3. Mettre à jour le plan (nouvelle transaction readwrite)
+        const txWrite = dbLocal.transaction("planifications", "readwrite");
+        const store = txWrite.objectStore("planifications");
+        if (plan.freqUnit === "none") {
+          plan.status = "validated";
+        } else {
+          plan.startDate = plan.nextDueDate;
+          plan.nextDueDate = calculateNextDate(plan.startDate, plan.freqVal, plan.freqUnit);
+          plan.status = "pending";
+        }
+        store.put(plan);
+        return new Promise((r, rej) => {
+          txWrite.oncomplete = r;
+          txWrite.onerror = () => rej(txWrite.error);
+        });
+      }
+
+      async function getPlanificationById(id) {
+        const dbLocal = await getDB();
+        return new Promise(r => dbLocal.transaction("planifications", "readonly").objectStore("planifications").get(id).onsuccess = e => r(e.target.result));
+      }
+
+      function calculateNextDate(start, val, unit) {
+        const d = new Date(start || Date.now());
+        if (unit === "none") return d.getTime();
+        const v = parseInt(val) || 1;
+        if (unit === "days") d.setDate(d.getDate() + v);
+        else if (unit === "weeks") d.setDate(d.getDate() + (v * 7));
+        else if (unit === "months") d.setMonth(d.getMonth() + v);
+        else if (unit === "years") d.setFullYear(d.getFullYear() + v);
+        return d.getTime();
+      }
+
+      return { initDB, createWallet, updateWallet, deleteWallet, getAllWallets, getWalletById, addTransaction, getWalletHistory, createPlanification, updatePlanification, deletePlanification, getAllPlanifications, validatePlanification, getPlanificationById, saveNotification, getUnreadNotifCount };
+    })();
+
+    // ==========================================
+    // ACTIONS & UI LOGIC
+    // ==========================================
+    const db = window.db;
+    let balanceVisible = true;
+    let selectedWalletId = null;
+    let currentAction = null;
+    let longPressTarget = null;
+    let pressTimer = null;
+
+    function resetSteps() {
+      const txFields = ["formAmount", "formReason"];
+      const planFields = ["planName", "planDesc", "planAmount"];
+      const walletFields = ["walletNameInput", "walletDescInput"];
+      [...txFields, ...planFields, ...walletFields].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+      selectedWalletId = null;
+      currentAction = null;
+    }
+
+    window.onload = async () => {
+      try {
+        await db.initDB();
+        requestNotifPermission(); // Do not await, to prevent blocking UI if user doesn't respond
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('sw.js').then(() => console.log("SW Registered")).catch(e => console.log("SW Error", e));
+        }
+
+        updateDate();
+        await updateUI();
+        initLongPress();
+      } catch (err) { console.error("Erreur init:", err); }
+    };
+
+    window.refreshUI = async () => {
+      await updateUI();
+    };
+
+    // REFRESH UI
+    async function updateUI() {
+      try {
+        updateDate();
+        const unreadCount = await db.getUnreadNotifCount();
+        const badge = document.getElementById("notifBadge");
+        if (unreadCount > 0) {
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+
+        const wallets = await db.getAllWallets();
+        const plans = await db.getAllPlanifications();
+
+        // Auto-generate notifications for plans
+        const today = new Date().setHours(0, 0, 0, 0);
+        const allNotifs = await new Promise(async r => {
+          try {
+            const d = await db.initDB();
+            if (!d.objectStoreNames.contains("notifications")) return r([]);
+            const tx = d.transaction("notifications", "readonly");
+            const req = tx.objectStore("notifications").getAll();
+            req.onsuccess = e => r(e.target.result);
+            req.onerror = () => r([]);
+          } catch(e) { r([]); }
+        });
+
+        for (const p of plans) {
+          if (p.status === 'pending') {
+            const due = new Date(p.nextDueDate).setHours(0, 0, 0, 0);
+            const diff = (due - today) / (1000 * 60 * 60 * 24);
+
+            let title = "", msg = "";
+            if (diff === 2) { title = "Rappel J-2"; msg = `Votre planification "${p.label}" est prévue dans 2 jours.`; }
+            else if (diff === 1) { title = "Rappel Demain"; msg = `Demain : "${p.label}" (${p.amount} FCFA).`; }
+            else if (diff === 0) { title = "Échéance Aujourd'hui"; msg = `Il est temps de valider "${p.label}".`; }
+            else if (diff < 0) { title = "En retard"; msg = `La planification "${p.label}" est en attente de relance.`; }
+
+            if (title) {
+              const existing = allNotifs.find(n => n.title === title && n.message === msg && new Date(n.date).setHours(0, 0, 0, 0) === today);
+              if (!existing) await db.saveNotification(title, msg, diff < 0 ? 'alert' : 'info');
+            }
+          }
+        }
+
+        const totalGlobal = wallets.reduce((sum, w) => sum + (w.balance || 0), 0);
+        renderBalance(totalGlobal);
+
+        const walletsContainer = document.getElementById("walletsList");
+        if (wallets.length === 0) {
+          walletsContainer.innerHTML = `<div class="bg-gray-50 border-2 border-dashed border-gray-200 w-full rounded-[32px] p-10 flex flex-col items-center justify-center text-center"><i class="fa-solid fa-wallet text-gray-200 text-4xl mb-3"></i><p class="text-gray-400 text-sm font-bold">Aucun portefeuille actif</p></div>`;
+        } else {
+          window._desc = [];
+          walletsContainer.innerHTML = (await Promise.all(wallets.map(async w => {
+            const history = await db.getWalletHistory(w.id);
+            const lastTx = history[0] || null;
+            const pendingCount = plans.filter(p => p.walletId === w.id && p.status === 'pending').length;
+            const descIdx = window._desc.push(w.description || 'Aucune description') - 1;
+            return `
+            <div data-id="${w.id}" data-type="wallet" data-name="${w.name}" class="wallet-card bg-white border border-gray-100 shadow-md rounded-[32px] p-6 w-80 flex-shrink-0 cursor-pointer active:scale-95 transition-all relative overflow-hidden">
+              ${pendingCount > 0 ? `<div class="absolute top-0 right-0 p-2"><div class="bg-red-500 w-2 h-2 rounded-full ring-4 ring-white animate-pulse"></div></div>` : ''}
+              <div>
+                <div class="flex justify-between items-start mb-8" onclick="window.location.href='wallet-detail.html?id=${w.id}'">
+                  <div class="flex-1 min-w-0 pr-4">
+                    <h4 class="font-bold text-gray-900 text-xl truncate leading-tight">${w.name}</h4>
+                    ${w.description ? `<p class="text-emerald-600/60 text-xs font-bold mt-1 cursor-pointer" onclick="event.stopPropagation(); showDescription(_desc[${descIdx}])" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:underline;text-decoration-color:rgba(52,211,153,0.4)">${_trunc(w.description, 36)}</p>` : '<p class="text-gray-300 text-xs mt-1">—</p>'}
+                  </div>
+                  <div class="text-right flex-shrink-0">
+                    <span class="text-2xl font-black text-emerald-600 block leading-none tabular-nums">${(w.balance || 0).toLocaleString('fr-FR')}</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">FCFA</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-end" onclick="window.location.href='wallet-detail.html?id=${w.id}'">
+                  <div class="flex items-center gap-2">
+                    <div class="${lastTx?.type === 'deposit' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'} w-8 h-8 rounded-full flex items-center justify-center">
+                      <i class="fa-solid ${lastTx?.type === 'deposit' ? 'fa-arrow-up' : 'fa-arrow-down'} text-xs"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-black ${lastTx?.type === 'deposit' ? 'text-emerald-600' : 'text-red-500'}">${lastTx ? (lastTx.type === 'deposit' ? '+' : '-') + lastTx.amount.toLocaleString('fr-FR') : '0'} FCFA</p>
+                      <p class="text-[8px] font-bold text-gray-400 uppercase">Dernière opé.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          }))).join('');
+        }
+
+        const now = Date.now();
+        const activePlans = plans.filter(p => p.status === 'pending');
+        document.getElementById("planCount").textContent = activePlans.length;
+        const plansContainer = document.getElementById("plansList");
+
+        if (activePlans.length === 0) {
+          plansContainer.innerHTML = `<div class="py-12 text-center bg-gray-50 rounded-[32px] text-gray-400 text-sm font-bold">Rien à faire</div>`;
+        } else {
+          plansContainer.innerHTML = activePlans.map(p => {
+            const nowMidnight = new Date(); nowMidnight.setHours(0, 0, 0, 0);
+            const dueDate = new Date(p.nextDueDate); dueDate.setHours(0, 0, 0, 0);
+            const daysDiff = Math.round((dueDate.getTime() - nowMidnight.getTime()) / 86400000);
+
+            let actionBtn = '';
+            let notifHtml = '';
+            if (daysDiff > 0) {
+              if (daysDiff === 1) notifHtml = '<span class="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-md uppercase font-black ml-1">Demain</span>';
+              else if (daysDiff === 2) notifHtml = '<span class="text-[8px] bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-md uppercase font-black ml-1">Dans 2 jours</span>';
+              actionBtn = `<div class="bg-gray-100 text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ml-2 border border-gray-200 shadow-inner">J-${daysDiff}</div>`;
+            } else if (daysDiff === 0) {
+              notifHtml = '<span class="text-[8px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-md uppercase font-black ml-1">Aujourd\'hui</span>';
+              actionBtn = `<button onclick="handlePlanAction(${p.id}, false)" class="bg-emerald-600 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-emerald-100 ml-2">Valider</button>`;
+            } else {
+              if (daysDiff === -1) notifHtml = '<span class="text-[8px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-md uppercase font-black ml-1">Hier</span>';
+              else notifHtml = '<span class="text-[8px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded-md uppercase font-black ml-1">En retard</span>';
+              actionBtn = `<button onclick="handlePlanAction(${p.id}, true)" class="bg-red-500 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-red-100 ml-2"><i class="fa-solid fa-rotate"></i> Sync</button>`;
+            }
+
+            const descIdx = window._desc.push(p.description || 'Aucune description') - 1;
+            return `
+            <div data-id="${p.id}" data-type="plan" data-name="${p.label}" class="plan-card bg-white border border-gray-100 shadow-sm rounded-[28px] p-4 flex justify-between items-center active:bg-gray-50 transition-all ${daysDiff < 0 ? 'border-red-100 bg-red-50/20' : ''}">
+              <div class="flex gap-4 items-center min-w-0 flex-1">
+                 <div class="${daysDiff < 0 ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'} w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <i class="fa-solid ${daysDiff < 0 ? 'fa-triangle-exclamation' : 'fa-calendar-check'} text-lg"></i>
+                 </div>
+                 <div class="min-w-0 flex-1">
+                  <p class="font-black text-gray-800 text-sm leading-tight truncate">${p.label} ${notifHtml}</p>
+                  ${p.description ? `<p class="text-[10px] font-bold text-gray-400 opacity-70 cursor-pointer" onclick="event.stopPropagation(); showDescription(_desc[${descIdx}])" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:underline;text-decoration-color:rgba(156,163,175,0.4)">${_trunc(p.description, 38)}</p>` : ''}
+                  <p class="text-[10px] font-bold text-gray-400">${p.amount.toLocaleString('fr-FR')} FCFA • ${new Date(p.nextDueDate).toLocaleDateString('fr-FR')}</p>
+                </div>
+              </div>
+              ${actionBtn}
+            </div>
+          `;
+          }).join('');
+        }
+        initLongPress();
+      } catch (err) { console.error("UpdateUI Error:", err); }
+    }
+
+    // BOTTOM SHEET LOGIC
+    window.openQuickTransaction = async () => {
+      resetSteps();
+      const wallets = await db.getAllWallets();
+      const list = document.getElementById("walletSelectorList");
+      list.innerHTML = wallets.map(w => `
+        <button onclick="selectWallet(${w.id})" class="w-full p-5 bg-gray-50 rounded-2xl flex justify-between items-center font-bold text-gray-700 hover:bg-emerald-50 transition border border-transparent hover:border-emerald-100">
+          <span>${w.name}</span>
+          <span class="text-emerald-600">${w.balance.toLocaleString()} FCFA</span>
+        </button>
+      `).join('') + `
+        <button onclick="createNewWallet()" class="w-full p-5 bg-white border-2 border-dashed border-gray-200 rounded-2xl flex justify-center items-center gap-2 font-bold text-gray-400 hover:border-emerald-300 hover:text-emerald-500 transition">
+          <i class="fa-solid fa-plus-circle"></i> Nouveau portefeuille
+        </button>
+      `;
+
+      document.getElementById("actionSheet").classList.remove("sheet-hidden");
+      setTimeout(() => document.getElementById("actionSheetContent").classList.remove("sheet-content-hidden"), 10);
+    };
+
+    window.closeSheet = () => {
+      document.getElementById("actionSheetContent").classList.add("sheet-content-hidden");
+      setTimeout(() => document.getElementById("actionSheet").classList.add("sheet-hidden"), 300);
+    };
+
+    window.selectWallet = (id) => {
+      selectedWalletId = id;
+      document.getElementById("sheetStep1").classList.add("hidden");
+      document.getElementById("sheetStep2").classList.remove("hidden");
+    };
+
+    window.prevStep = () => {
+      document.getElementById("sheetStep2").classList.add("hidden");
+      document.getElementById("sheetStep1").classList.remove("hidden");
+    };
+
+    window.showForm = (type) => {
+      currentAction = type;
+      document.getElementById("sheetStep1").classList.add("hidden");
+      document.getElementById("sheetStep2").classList.add("hidden");
+      document.getElementById("sheetForm").classList.remove("hidden");
+      document.getElementById("backBtn").classList.remove("hidden");
+
+      const isPlan = type === 'plan';
+      const isWallet = type === 'wallet';
+
+      document.getElementById("formTitle").textContent = isWallet ? "Portefeuille" : (isPlan ? "Planification" : (type === 'deposit' ? "Ajouter" : "Retirer"));
+      document.getElementById("txForm").classList.toggle("hidden", isPlan || isWallet);
+      document.getElementById("planForm").classList.toggle("hidden", !isPlan);
+      document.getElementById("walletForm").classList.toggle("hidden", !isWallet);
+
+      if (isPlan) document.getElementById("planDate").valueAsDate = new Date();
+    };
+
+    window.backToActions = () => {
+      document.getElementById("sheetForm").classList.add("hidden");
+      if (currentAction === 'wallet') {
+        closeSheet();
+      } else {
+        document.getElementById("sheetStep2").classList.remove("hidden");
+      }
+    };
+
+    function resetSteps() {
+      document.getElementById("sheetStep1").classList.remove("hidden");
+      document.getElementById("sheetStep2").classList.add("hidden");
+      document.getElementById("sheetForm").classList.add("hidden");
+      document.getElementById("formAmount").value = "";
+      document.getElementById("formReason").value = "";
+      document.getElementById("planName").value = "";
+      document.getElementById("planAmount").value = "";
+      document.getElementById("walletNameInput").value = "";
+      document.getElementById("walletDescInput").value = "";
+      longPressTarget = null;
+    }
+
+    window.submitForm = async () => {
+      if (currentAction === 'wallet') {
+        const name = document.getElementById("walletNameInput").value;
+        const desc = document.getElementById("walletDescInput").value;
+        if (!name) return showError("Le nom du portefeuille est obligatoire.");
+        if (longPressTarget) await db.updateWallet(longPressTarget.id, { name, description: desc });
+        else await db.createWallet(name, desc);
+      } else if (currentAction === 'plan') {
+        const data = {
+          walletId: selectedWalletId,
+          label: document.getElementById("planName").value,
+          description: document.getElementById("planDesc").value,
+          amount: parseFloat(document.getElementById("planAmount").value),
+          type: document.getElementById("planType").value,
+          startDate: new Date(document.getElementById("planDate").value).getTime(),
+          freqVal: parseInt(document.getElementById("planFreqVal").value) || 0,
+          freqUnit: document.getElementById("planFreqUnit").value
+        };
+
+        if (!data.label) return showError("Le nom de la planification est obligatoire.");
+        if (!data.amount || isNaN(data.amount)) return showError("Le montant est invalide.");
+        if (!data.description) return showError("La description est obligatoire pour une planification.");
+        if (isNaN(data.startDate)) return showError("La date de départ est invalide.");
+
+        // Restriction: Date passée
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        if (data.startDate < today.getTime() && !longPressTarget) {
+          return showError("Impossible de planifier une tâche dans le passé.");
+        }
+
+        if (longPressTarget) await db.updatePlanification(longPressTarget.id, data);
+        else await db.createPlanification(data);
+      } else {
+        const amount = parseFloat(document.getElementById("formAmount").value);
+        const reason = document.getElementById("formReason").value;
+        if (!amount || isNaN(amount)) return showError("Montant invalide");
+        if (currentAction === 'withdrawal' && !reason) return showError("Le motif est obligatoire pour un retrait.");
+
+        try {
+          await db.addTransaction(selectedWalletId, amount, currentAction, reason);
+        } catch (e) {
+          return showError(e.message);
+        }
+      }
+      closeSheet();
+      refreshUI();
+    };
+
+    // LONG PRESS & CONTEXT MENU
+    function initLongPress() {
+      const items = document.querySelectorAll('.wallet-card, .plan-card');
+      items.forEach(item => {
+        item.onmousedown = (e) => startPress(e, item);
+        item.ontouchstart = (e) => startPress(e, item);
+        item.onmouseup = clearPress;
+        item.onmouseleave = clearPress;
+        item.ontouchend = clearPress;
+        item.ontouchmove = clearPress; // Prevent context menu when scrolling
+      });
+    }
+
+    function startPress(e, item) {
+      longPressTarget = {
+        id: parseInt(item.dataset.id),
+        type: item.dataset.type,
+        name: item.dataset.name,
+        x: e.clientX || e.touches[0].clientX,
+        y: e.clientY || e.touches[0].clientY
+      };
+      pressTimer = setTimeout(showContextMenu, 600);
+    }
+
+    function clearPress() { clearTimeout(pressTimer); }
+
+    function showContextMenu() {
+      const menu = document.getElementById("contextMenu");
+      menu.style.left = `${Math.min(longPressTarget.x, window.innerWidth - 160)}px`;
+      menu.style.top = `${longPressTarget.y}px`;
+      menu.classList.add("active");
+
+      const hideMenu = () => {
+        menu.classList.remove("active");
+        document.removeEventListener('click', hideMenu);
+      };
+      setTimeout(() => document.addEventListener('click', hideMenu), 10);
+    }
+
+    let currentValidationTarget = null;
+
+    window.closeValidationModal = () => document.getElementById("validationModal").style.display = 'none';
+
+    window.showError = (msg) => {
+      document.getElementById("errorMessage").textContent = msg;
+      document.getElementById("errorModal").style.display = 'flex';
+    };
+    window.closeErrorModal = () => document.getElementById("errorModal").style.display = 'none';
+
+    window.confirmValidation = async () => {
+      const motif = document.getElementById("validationMotif").value;
+      if (currentValidationTarget.type !== 'deposit' && !motif) return showError("Le motif est obligatoire.");
+      
+      try {
+        await db.validatePlanification(currentValidationTarget.id, motif);
+        closeValidationModal();
+        refreshUI();
+      } catch (err) {
+        showError(err.message || "Erreur lors de la validation");
+      }
+    };
+
+    window.closeDeleteModal = () => document.getElementById("deleteModal").style.display = 'none';
+
+    window.confirmDelete = async () => {
+      const input = document.getElementById("deleteConfirmInput").value.trim().toLowerCase();
+      const targetName = longPressTarget.name.trim().toLowerCase();
+      
+      if (input === targetName) {
+        if (longPressTarget.type === 'wallet') {
+          await db.deleteWallet(longPressTarget.id);
+        } else {
+          await db.deletePlanification(longPressTarget.id);
+        }
+        closeDeleteModal();
+        refreshUI();
+      } else {
+        showError("Le nom ne correspond pas exactement.");
+      }
+    };
+
+    window.handleContextDelete = async () => {
+      document.getElementById("deleteItemName").textContent = longPressTarget.name;
+      document.getElementById("deleteConfirmInput").value = "";
+      document.getElementById("deleteModal").style.display = 'flex';
+    };
+
+    window.handleContextEdit = async () => {
+      if (!longPressTarget) return;
+
+      document.getElementById("actionSheet").classList.remove("sheet-hidden");
+      setTimeout(() => document.getElementById("actionSheetContent").classList.remove("sheet-content-hidden"), 10);
+
+      if (longPressTarget.type === 'wallet') {
+        const w = await db.getWalletById(longPressTarget.id);
+        showForm('wallet');
+        document.getElementById("backBtn").classList.add("hidden");
+        document.getElementById("walletNameInput").value = w.name;
+        document.getElementById("walletDescInput").value = w.description || "";
+      } else {
+        const p = await db.getPlanificationById(longPressTarget.id);
+        selectedWalletId = p.walletId;
+        showForm('plan');
+        document.getElementById("backBtn").classList.add("hidden");
+        document.getElementById("planName").value = p.label;
+        document.getElementById("planDesc").value = p.description || "";
+        document.getElementById("planAmount").value = p.amount;
+        document.getElementById("planType").value = p.type;
+        document.getElementById("planDate").valueAsDate = new Date(p.startDate);
+        document.getElementById("planFreqVal").value = p.freqVal;
+        document.getElementById("planFreqUnit").value = p.freqUnit;
+      }
+    };
+
+    window.handlePlanAction = async (id, isLate) => {
+      if (isLate) {
+        longPressTarget = { id, type: 'plan', name: (await db.getPlanificationById(id)).label };
+        handleContextEdit();
+      } else {
+        const p = await db.getPlanificationById(id);
+        currentValidationTarget = p;
+        document.getElementById("validationPlanName").textContent = p.label;
+        document.getElementById("validationMotif").value = p.description || "";
+        const asterisk = document.getElementById("validationMotifAsterisk");
+        asterisk.style.display = p.type === 'withdrawal' ? 'inline' : 'none';
+        document.getElementById("validationModal").style.display = 'flex';
+      }
+    };
+
+    window.createNewWallet = () => {
+      longPressTarget = null;
+      showForm('wallet');
+      document.getElementById("actionSheet").classList.remove("sheet-hidden");
+      setTimeout(() => document.getElementById("actionSheetContent").classList.remove("sheet-content-hidden"), 10);
+      document.getElementById("backBtn").classList.add("hidden");
+    };
+
+    // UTILS
+    window.showDescription = (text) => {
+      document.getElementById("descFullText").textContent = text;
+      document.getElementById("descOverlay").style.display = 'flex';
+    };
+    window.closeDesc = () => { document.getElementById("descOverlay").style.display = 'none'; };
+
+    function updateDate() {
+      const now = new Date();
+      document.getElementById("currentDate").textContent = now.toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+    }
+
+    function renderBalance(total) {
+      const el = document.getElementById("totalBalance");
+      const icon = document.getElementById("eyeButton");
+      if (balanceVisible) {
+        el.textContent = total.toLocaleString('fr-FR') + " FCFA";
+        icon.innerHTML = '<i class="fa-solid fa-eye text-xl"></i>';
+      } else {
+        el.innerHTML = '<span class="balance-masked tracking-widest">••••••</span> <span class="text-2xl ml-1 font-bold opacity-30">FCFA</span>';
+        icon.innerHTML = '<i class="fa-solid fa-eye-slash text-xl"></i>';
+      }
+    }
+
+    window.toggleBalance = () => { balanceVisible = !balanceVisible; refreshUI(); };
+
+    // NAVIGATION LOGIC
+    window.nav = (url) => {
+      window.location.href = `chargement.html?to=${url}`;
+    };
+
+    // REDIRECTION
+    window.goToLastWallet = () => { const id = localStorage.getItem('lastWalletId'); if (id) nav(`wallet-detail.html?id=${id}`); else showError("Aucun portefeuille récent"); };
+    window.goToLastHistory = () => { nav('history.html'); };
+    window.goToAssistant = () => { nav('assistant.html'); };
+
+    // NATIVE NOTIFICATIONS
+    window.notify = async (title, body) => {
+      if ("Notification" in window && Notification.permission === "granted") {
+        const registration = await navigator.serviceWorker.ready;
+        registration.showNotification(title, {
+          body,
+          icon: 'assets/icon.png',
+          badge: 'assets/icon.png',
+          vibrate: [200, 100, 200]
+        });
+        notifSound.play().catch(() => { });
+      }
+    };
+  </script>
+  <script src="tutorial.js"></script>
+</body>
+
+</html>

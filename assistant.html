@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Assistant IA</title>
+  <script src="js/tailwind.js"></script>
+  <link rel="stylesheet" href="fontawesome/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .chat-bubble {
+      border-radius: 28px;
+      max-width: 90%;
+      position: relative;
+    }
+
+    .assistant-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .assistant-header {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+    }
+
+    .assistant-body {
+      background: #f3f4f6;
+      border-radius: 28px;
+      border-bottom-left-radius: 4px;
+      padding: 20px;
+      color: #1f2937;
+      font-weight: 600;
+      line-height: 1.6;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+
+    .user-bubble {
+      background: #059669;
+      color: white;
+      border-radius: 28px;
+      border-bottom-right-radius: 4px;
+      padding: 16px 20px;
+      font-weight: 700;
+      align-self: flex-end;
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
+    }
+
+    .typing-dot {
+      animation: typing 1s infinite;
+    }
+
+    @keyframes typing {
+
+      0%,
+      100% {
+        opacity: 0.3;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .config-sheet {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sheet-hidden {
+      transform: translateY(100%);
+    }
+
+    @keyframes agent-pulse {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.7);
+      }
+
+      70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(110, 231, 183, 0);
+      }
+
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(110, 231, 183, 0);
+      }
+    }
+
+    .speaking-pulse {
+      animation: agent-pulse 1.5s infinite;
+      cursor: pointer;
+    }
+
+    #scrollTopBtn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      display: flex;
+    }
+  </style>
+</head>
+
+<body class="bg-white h-screen font-sans flex flex-col text-base overflow-hidden">
+
+  <div class="max-w-md mx-auto bg-white h-screen shadow-2xl flex flex-col relative overflow-hidden">
+
+    <!-- HEADER -->
+    <div
+      class="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <div id="headerBotIcon" onclick="stopTTS()"
+          class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center border border-white/10 backdrop-blur-sm transition-all duration-300">
+          <i class="fa-solid fa-robot text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight" id="aiNameDisplay">Assistant IA</h1>
+          <div class="flex items-center gap-1.5">
+            <span
+              class="w-2.5 h-2.5 bg-emerald-300 rounded-full animate-pulse shadow-[0_0_8px_rgba(110,231,183,0.8)]"></span>
+            <p class="text-emerald-100/70 text-[10px] font-bold uppercase tracking-widest leading-none">Agent Connecté
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="toggleVoiceConfig()"
+          class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center active:scale-90 transition border border-white/10 backdrop-blur-sm">
+          <i class="fa-solid fa-microphone-lines text-lg"></i>
+        </button>
+        <button onclick="toggleApiConfig()"
+          class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center active:scale-90 transition border border-white/10 backdrop-blur-sm">
+          <i class="fa-solid fa-sliders text-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- CHAT MESSAGES -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide pb-32"></div>
+
+    <!-- TYING INDICATOR -->
+    <div id="typingIndicator" class="hidden px-6 py-4">
+      <div class="bg-gray-100 rounded-2xl px-5 py-3 inline-flex items-center gap-2">
+        <span class="typing-dot w-2 h-2 bg-emerald-500 rounded-full"></span>
+        <span class="typing-dot w-2 h-2 bg-emerald-500 rounded-full" style="animation-delay: 0.2s"></span>
+        <span class="typing-dot w-2 h-2 bg-emerald-500 rounded-full" style="animation-delay: 0.4s"></span>
+      </div>
+    </div>
+
+    <!-- SCROLL TO TOP BUTTON -->
+    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-36 right-6 w-10 h-10 bg-white rounded-full shadow-lg border border-gray-100 items-center justify-center text-emerald-600 transition-all opacity-0 pointer-events-none active:scale-90 z-30 hidden">
+      <i class="fa-solid fa-chevron-up"></i>
+    </button>
+
+    <!-- INPUT AREA -->
+    <div class="p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 sticky bottom-16 z-20">
+      <div class="flex items-center gap-3 bg-gray-100 rounded-[30px] p-2 pr-3 border border-gray-200 shadow-inner">
+        <button id="micBtn" onclick="toggleSTT()"
+          class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-gray-400 active:bg-emerald-50 active:text-emerald-500 transition shadow-sm border border-gray-100">
+          <i class="fa-solid fa-microphone text-lg"></i>
+        </button>
+        <input id="userInput" type="text" placeholder="Écrivez un message..."
+          onkeypress="if(event.key === 'Enter') sendMessage()"
+          class="flex-1 bg-transparent border-none outline-none px-2 font-bold text-gray-700 placeholder:text-gray-400">
+        <button onclick="sendMessage()"
+          class="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center text-white active:scale-95 transition shadow-lg shadow-emerald-600/30">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- NAVIGATION BAR -->
+    <div
+      class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-t-[30px] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <button onclick="nav('index.html')"
+        class="text-gray-400 flex flex-col items-center gap-1.5 transition-all">
+        <i class="fa-solid fa-house-chimney text-lg"></i>
+        <span class="text-[9px] font-black uppercase tracking-widest">Accueil</span>
+      </button>
+      <button onclick="nav('index.html')"
+        class="text-gray-400 flex flex-col items-center gap-1.5 transition-all">
+        <i class="fa-solid fa-wallet text-lg"></i>
+        <span class="text-[9px] font-black uppercase tracking-widest">Wallets</span>
+      </button>
+      <button onclick="nav('history.html')"
+        class="text-gray-400 flex flex-col items-center gap-1.5 transition-all">
+        <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+        <span class="text-[9px] font-black uppercase tracking-widest">Historique</span>
+      </button>
+    </div>
+
+    <!-- CONFIG SHEETS -->
+    <div id="apiConfig" class="fixed inset-0 z-[100] hidden">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleApiConfig()"></div>
+      <div
+        class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-[40px] p-8 config-sheet sheet-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.2)]"
+        id="apiSheet">
+        <div class="flex justify-between items-center mb-8">
+          <h3 class="font-black text-gray-900 text-xl flex items-center gap-3"><i
+              class="fa-solid fa-brain text-emerald-600"></i> API Fournisseur</h3>
+          <button onclick="toggleApiConfig()" class="text-gray-300 hover:text-gray-500"><i
+              class="fa-solid fa-circle-xmark text-2xl"></i></button>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <button onclick="setProvider('groq')"
+            class="provider-btn p-4 rounded-2xl border-2 border-gray-100 flex flex-col items-center gap-2 transition active:scale-95"
+            id="btn-groq"><i class="fa-solid fa-bolt text-orange-500"></i><span
+              class="text-[10px] font-black">Groq</span></button>
+          <button onclick="setProvider('google')"
+            class="provider-btn p-4 rounded-2xl border-2 border-gray-100 flex flex-col items-center gap-2 transition active:scale-95"
+            id="btn-google"><i class="fa-brands fa-google text-blue-500"></i><span
+              class="text-[10px] font-black">Google</span></button>
+          <button onclick="setProvider('cerebras')"
+            class="provider-btn p-4 rounded-2xl border-2 border-gray-100 flex flex-col items-center gap-2 transition active:scale-95"
+            id="btn-cerebras"><i class="fa-solid fa-microchip text-purple-500"></i><span
+              class="text-[10px] font-black">Cerebras</span></button>
+        </div>
+        <input id="apiKey" type="password" placeholder="Clé API"
+          class="w-full p-5 bg-gray-50 rounded-2xl border-2 border-gray-100 focus:border-emerald-500 outline-none transition font-bold text-sm mb-6">
+        <button onclick="saveApi()"
+          class="w-full bg-emerald-600 text-white p-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all uppercase tracking-widest">Sauvegarder</button>
+      </div>
+    </div>
+
+    <div id="voiceConfig" class="fixed inset-0 z-[100] hidden">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleVoiceConfig()"></div>
+      <div
+        class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-[40px] p-8 config-sheet sheet-hidden shadow-[0_-10px_40px_rgba(0,0,0,0.2)] h-[80vh] flex flex-col"
+        id="voiceSheet">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-black text-gray-900 text-xl flex items-center gap-3"><i
+              class="fa-solid fa-volume-high text-emerald-600"></i> Voix Françaises</h3>
+          <button onclick="initVoices()" class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 active:scale-90 transition"><i class="fa-solid fa-arrows-rotate text-sm"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide" id="voiceListContainer"></div>
+        <button onclick="toggleVoiceConfig()"
+          class="w-full bg-emerald-600 text-white p-5 rounded-[24px] font-black shadow-xl active:scale-95 transition-all uppercase tracking-widest mt-4">Terminer</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const db = (function () {
+      let dbInstance = null;
+      async function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open("PortefeuilleDB", 4);
+          request.onsuccess = (e) => {
+            dbInstance = e.target.result;
+            console.log("✅ Database Initialized");
+            resolve(dbInstance);
+          };
+          request.onerror = (e) => {
+            console.error("❌ Database Error:", e.target.error);
+            reject(e.target.error);
+          };
+        });
+      }
+      async function getDB() { if (dbInstance) return dbInstance; return await initDB(); }
+      return {
+        initDB: initDB,
+        getWallets: async () => { const d = await getDB(); return new Promise(r => d.transaction("wallets").objectStore("wallets").getAll().onsuccess = e => r(e.target.result)); },
+        saveChat: async (msg) => { 
+          const d = await getDB(); 
+          const tx = d.transaction("chat_history", "readwrite"); 
+          const req = tx.objectStore("chat_history").add(msg); 
+          return new Promise((r, reject) => {
+            req.onsuccess = e => r(e.target.result);
+            req.onerror = e => reject(e.target.error);
+          });
+        },
+        getChatHistory: async () => { const d = await getDB(); return new Promise(r => d.transaction("chat_history").objectStore("chat_history").getAll().onsuccess = e => r(e.target.result)); },
+        addTransaction: async (walletId, amount, type, reason) => {
+          const d = await getDB();
+          const tx = d.transaction(["transactions", "wallets"], "readwrite");
+          const wStore = tx.objectStore("wallets");
+          const wallet = await new Promise(r => wStore.get(walletId).onsuccess = e => r(e.target.result));
+          if (wallet) { wallet.balance += (type === 'deposit' ? amount : -amount); wStore.put(wallet); tx.objectStore("transactions").add({ walletId, amount, type, reason, date: Date.now() }); }
+          return new Promise(r => tx.oncomplete = r);
+        },
+        createWallet: async (name, description) => {
+          const d = await getDB();
+          const tx = d.transaction("wallets", "readwrite");
+          tx.objectStore("wallets").add({ name, description, balance: 0, createdAt: Date.now() });
+          return new Promise(r => tx.oncomplete = r);
+        },
+        deleteWallet: async (id) => {
+          const d = await getDB();
+          const tx = d.transaction("wallets", "readwrite");
+          tx.objectStore("wallets").delete(id);
+          return new Promise(r => tx.oncomplete = r);
+        },
+        createPlan: async (p) => {
+          const d = await getDB();
+          const tx = d.transaction("planifications", "readwrite");
+          tx.objectStore("planifications").add({ ...p, active: true, createdAt: Date.now() });
+          return new Promise(r => tx.oncomplete = r);
+        },
+        deletePlan: async (id) => {
+          const d = await getDB();
+          const tx = d.transaction("planifications", "readwrite");
+          tx.objectStore("planifications").delete(id);
+          return new Promise(r => tx.oncomplete = r);
+        },
+        deleteLastAssistantMessage: async () => {
+          const d = await getDB();
+          const tx = d.transaction("chat_history", "readwrite");
+          const store = tx.objectStore("chat_history");
+          const all = await new Promise(r => store.getAll().onsuccess = e => r(e.target.result));
+          if (all.length > 0 && all[all.length - 1].role === 'assistant') {
+            store.delete(all[all.length - 1].id);
+          }
+          return new Promise(r => tx.oncomplete = r);
+        },
+        updateUserMessageText: async (id, newText) => {
+          if (!id) return;
+          const d = await getDB();
+          const tx = d.transaction("chat_history", "readwrite");
+          const store = tx.objectStore("chat_history");
+          const req = store.get(id);
+          req.onsuccess = (e) => {
+             const msg = e.target.result;
+             if (msg) {
+                 msg.text = newText;
+                 store.put(msg);
+             }
+          };
+          return new Promise(r => tx.oncomplete = r);
+        },
+        clearChatHistory: async () => {
+          const d = await getDB();
+          const tx = d.transaction("chat_history", "readwrite");
+          tx.objectStore("chat_history").clear();
+          return new Promise(r => tx.oncomplete = r);
+        }
+      };
+    })();
+
+    let voices = [];
+    let selectedVoiceURI = localStorage.getItem("selected_voice_uri") || null;
+    let recognition = null;
+    let isSttActive = false;
+    let sttTimeout = null;
+
+    function initVoices() {
+      let all = speechSynthesis.getVoices().filter(v => v.lang.startsWith('fr'));
+      
+      if (all.length === 0) {
+        // Tentative de secours si getVoices est vide (certains navigateurs ont besoin d'un petit délai)
+        console.log("⏳ Waiting for voices...");
+        return;
+      }
+
+      // Récupérer toutes les voix en ligne
+      const onlineVoices = all.filter(v => !v.localService);
+      
+      // Trier pour mettre Google en premier, puis les voix Natural (Edge), puis le reste
+      onlineVoices.sort((a, b) => {
+          if (a.name.includes('Google') && !b.name.includes('Google')) return -1;
+          if (!a.name.includes('Google') && b.name.includes('Google')) return 1;
+          if (a.name.includes('Natural') && !b.name.includes('Natural')) return -1;
+          if (!a.name.includes('Natural') && b.name.includes('Natural')) return 1;
+          return 0;
+      });
+
+      const topOnline = onlineVoices.slice(0, 8);
+      const offline = all.filter(v => v.localService).slice(0, 3);
+      
+      voices = [...topOnline, ...offline];
+      if (!selectedVoiceURI && voices.length > 0) selectedVoiceURI = voices[0].voiceURI;
+      renderVoiceList();
+    }
+    speechSynthesis.onvoiceschanged = () => { console.log("🔊 Voices Changed"); initVoices(); };
+
+    function renderVoiceList() {
+      const container = document.getElementById("voiceListContainer");
+      if (!container) return;
+      container.innerHTML = voices.map((v, i) => `
+        <div onclick="selectVoice('${v.voiceURI}')" class="p-4 bg-gray-50 rounded-2xl flex items-center justify-between cursor-pointer border-2 ${v.voiceURI === selectedVoiceURI ? 'border-emerald-500 bg-emerald-50' : 'border-transparent'}">
+          <div>
+            <p class="font-bold text-gray-800 text-sm">${v.name.split(' - ')[0]}</p>
+            <span class="text-[9px] font-black uppercase tracking-widest text-gray-400">${v.localService ? 'Offline' : 'Online'}</span>
+          </div>
+          <button onclick="event.stopPropagation(); testVoice('${v.voiceURI}')" class="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600"><i class="fa-solid fa-play text-xs"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function selectVoice(uri) {
+      selectedVoiceURI = uri;
+      localStorage.setItem("selected_voice_uri", uri);
+      renderVoiceList();
+    }
+
+    function testVoice(uri) {
+      const u = new SpeechSynthesisUtterance("Test de la voix.");
+      const v = voices.find(vo => vo.voiceURI === uri);
+      if (v) { u.voice = v; u.lang = v.lang; }
+      speechSynthesis.speak(u);
+    }
+
+    function toggleSpeak(text, btn, onEndCallback) {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        if (window.currentTypewriter) clearInterval(window.currentTypewriter);
+        if (btn) updateVoiceBtn(btn, 'idle');
+        document.getElementById("headerBotIcon").classList.remove("speaking-pulse");
+      } else {
+        // Vider la file d'attente bloquée avant de parler
+        speechSynthesis.cancel();
+        
+        if (btn) updateVoiceBtn(btn, 'loading');
+        
+        // Sauvegarder dans window pour éviter le garbage collection sous Chrome
+        window.currentUtterance = new SpeechSynthesisUtterance(text);
+        const v = voices.find(vo => vo.voiceURI === selectedVoiceURI) || voices[0];
+        if (v) { window.currentUtterance.voice = v; window.currentUtterance.lang = v.lang; }
+        window.currentUtterance.rate = 1.1;
+        
+        window.currentUtterance.onstart = () => {
+          if (btn) updateVoiceBtn(btn, 'playing');
+          document.getElementById("headerBotIcon").classList.add("speaking-pulse");
+        };
+        
+        window.currentUtterance.onend = () => {
+          if (btn) updateVoiceBtn(btn, 'idle');
+          document.getElementById("headerBotIcon").classList.remove("speaking-pulse");
+          if (onEndCallback) onEndCallback();
+          if (isConversationalMode) startSTT();
+        };
+
+        window.currentUtterance.onerror = (e) => {
+          console.error("TTS Error:", e);
+          if (btn) updateVoiceBtn(btn, 'idle');
+          document.getElementById("headerBotIcon").classList.remove("speaking-pulse");
+        };
+
+        // Forcer le bouton à 'playing' si onstart ne se déclenche jamais après 1s
+        setTimeout(() => {
+            if (btn && btn.innerHTML.includes('fa-spin')) {
+                updateVoiceBtn(btn, 'playing');
+            }
+        }, 1000);
+
+        speechSynthesis.speak(window.currentUtterance);
+      }
+    }
+
+    function updateVoiceBtn(btn, state) {
+      const baseClass = "voice-toggle absolute -left-2 -top-2 w-8 h-8 rounded-full text-white flex items-center justify-center transition shadow-md border-2 border-white z-10 cursor-pointer";
+      if (state === 'idle') {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-[10px]"></i>';
+        btn.className = baseClass + " bg-emerald-500 active:scale-90";
+      } else if (state === 'loading') {
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-[10px]"></i>';
+        btn.className = baseClass + " bg-gray-400";
+      } else if (state === 'playing') {
+        btn.innerHTML = '<i class="fa-solid fa-square text-[10px]"></i>';
+        btn.className = baseClass + " bg-red-500 active:scale-90";
+      }
+    }
+
+    function stopTTS() {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+        document.getElementById("headerBotIcon").classList.remove("speaking-pulse");
+        if (isConversationalMode) startSTT();
+      }
+    }
+
+    let isConversationalMode = false;
+    let isWaitingForAi = false;
+
+    function updateGlobalMicBtn() {
+      const btn = document.getElementById("micBtn");
+      if (isConversationalMode) {
+        btn.classList.add("bg-red-500", "text-white", "animate-pulse");
+        btn.classList.remove("bg-white", "text-gray-400");
+        btn.innerHTML = '<i class="fa-solid fa-square"></i>';
+      } else {
+        btn.classList.remove("bg-red-500", "text-white", "animate-pulse");
+        btn.classList.add("bg-white", "text-gray-400");
+        btn.innerHTML = '<i class="fa-solid fa-microphone text-lg"></i>';
+      }
+    }
+
+    function toggleSTT() {
+      if (isConversationalMode) {
+        isConversationalMode = false;
+        updateGlobalMicBtn();
+        stopSTT();
+        stopTTS();
+      } else {
+        isConversationalMode = true;
+        updateGlobalMicBtn();
+        startSTT();
+      }
+    }
+
+    function startSTT() {
+      if (isSttActive) return;
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.onstart = () => { isSttActive = true; resetSttTimeout(); };
+      recognition.onend = () => {
+        isSttActive = false;
+        if (isConversationalMode && !isWaitingForAi && !speechSynthesis.speaking) startSTT();
+      };
+      recognition.onresult = (e) => {
+        resetSttTimeout();
+        if (speechSynthesis.speaking || window.currentTypewriter) {
+          speechSynthesis.cancel();
+          if (window.currentTypewriter) clearInterval(window.currentTypewriter);
+          document.getElementById("headerBotIcon").classList.remove("speaking-pulse");
+          // On notifie l'IA qu'on l'a coupé dans le prochain envoi ? 
+          // C'est géré par le system prompt.
+        }
+        const transcript = e.results[e.results.length - 1][0].transcript.trim();
+        if (transcript) {
+          document.getElementById("userInput").value = transcript;
+          sendMessage();
+        }
+      };
+      try { recognition.start(); } catch (e) { }
+    }
+
+    function stopSTT() { if (recognition) recognition.stop(); }
+    function resetSttTimeout() { if (sttTimeout) clearTimeout(sttTimeout); sttTimeout = setTimeout(() => stopSTT(), 10000); }
+
+    let currentProvider = localStorage.getItem("ai_provider") || 'groq';
+
+    async function sendMessage(overrideText = null, isResend = false) {
+      // Hack iOS/Chrome mobile : Débloquer le moteur TTS pendant l'événement utilisateur synchrone
+      const unlock = new SpeechSynthesisUtterance('');
+      unlock.volume = 0;
+      speechSynthesis.speak(unlock);
+
+      const input = document.getElementById("userInput");
+      const text = overrideText !== null ? overrideText : input.value.trim();
+      if (!text) return;
+
+      if (isSttActive) stopSTT();
+      isWaitingForAi = true;
+
+      if (!isResend) {
+        const id = await db.saveChat({ role: 'user', text, date: Date.now() });
+        appendMessage('user', text, id);
+        input.value = "";
+      }
+
+      const key = localStorage.getItem("assistant_api_key");
+      if (!key) { isWaitingForAi = false; return appendMessage('assistant', "Configurez votre clé API."); }
+
+      showTyping(true);
+      try {
+        const wallets = await db.getWallets();
+        const history = await (await db.getChatHistory()).slice(-50); // Augmenté à 50 messages pour plus de contexte
+
+        const userName = localStorage.getItem("user_name") || "Inconnu";
+        const aiName = localStorage.getItem("ai_name") || "Assistant IA";
+
+        const context = `
+          NOM DE L'IA : ${aiName}
+          NOM DE L'UTILISATEUR : ${userName}
+          PERSONNALITÉ : Tu es un agent financier tendre mais très pointu. Tu fusionnes la rigueur d'un comptable avec une personnalité douce, rigolote et adaptative. 
+          OBJECTIF : Si l'utilisateur ne t'a pas encore donné de nom ou si tu n'en as pas, gère l'inscription poliment.
+          RÈGLE D'INTERRUPTION : Si l'utilisateur te coupe la parole, ton prochain message doit prendre en compte ce que tu étais en train de dire pour décider si tu finis ton idée ou si tu réponds à la nouvelle interruption. Tu es pro-actif.
+          IMPORTANT : N'utilise les "ACTIONS SPÉCIALES" ci-dessous QUE si l'utilisateur te demande explicitement d'exécuter une tâche ET que tu as TOUTES les informations nécessaires (ID, Montant, Motif, etc.). 
+          RÈGLE ANTI-HALLUCINATION : Si une information est manquante (ex: quel portefeuille utiliser, quel montant retirer), NE PAS utiliser de tag [ACTION:...]. Pose la question à l'utilisateur pour obtenir l'information manquante. Ne devine JAMAIS un montant ou un ID.
+          DONNÉES :
+          - Wallets: ${wallets.map(w => `ID:${w.id} ${w.name} (${w.balance} FCFA)`).join(', ')}
+          ACTIONS SPÉCIALES :
+          - [SET_AI_NAME:Nom] : Pour changer ton propre nom.
+          - [SET_USER_NAME:Nom] : Pour enregistrer le nom de l'utilisateur.
+          - [ACTION:REDIRECT:HISTORY:all|deposit|withdrawal]
+          - [ACTION:REDIRECT:PLANIFICATIONS]
+          - [ACTION:REDIRECT:WALLET:ID]
+          - [ACTION:CREATE_WALLET:Nom:Description]
+          - [ACTION:DELETE_WALLET:ID]
+          - [ACTION:DEPOSIT:W_ID:Montant:Motif]
+          - [ACTION:WITHDRAW:W_ID:Montant:Motif]
+          - [ACTION:CREATE_PLAN:W_ID:Montant:Type:Label:Desc:Freq:Day]
+          - [ACTION:DELETE_PLAN:ID]
+        `;
+
+        let url = currentProvider === 'groq' ? "https://api.groq.com/openai/v1" : (currentProvider === 'google' ? "https://generativelanguage.googleapis.com/v1beta/openai" : "https://api.cerebras.ai/v1");
+
+        // Modèles optimisés et vérifiés
+        let model = "";
+        if (currentProvider === 'groq') {
+          model = "llama-3.3-70b-versatile";
+        } else if (currentProvider === 'google') {
+          model = "gemini-1.5-flash"; // Compatible avec l'endpoint v1beta/openai
+        } else if (currentProvider === 'cerebras') {
+          model = "llama3.1-70b";
+        } else {
+          model = "llama-3.3-70b-versatile"; // Fallback Groq
+        }
+
+        const res = await fetch(url + "/chat/completions", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: "system", content: context }, ...history.map(h => ({ role: h.role, content: h.text })), { role: "user", content: text }]
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error.message || "Erreur API");
+        }
+
+        if (!data.choices || !data.choices[0]) {
+          throw new Error("Réponse API invalide (choices manquant)");
+        }
+
+        const aiText = data.choices[0].message.content;
+
+        // Sauvegarde immédiate avant toute action de redirection
+        await db.saveChat({ role: 'assistant', text: aiText, date: Date.now() });
+
+        showTyping(false);
+        isWaitingForAi = false;
+        handleAiResponse(aiText);
+      } catch (err) {
+        showTyping(false); isWaitingForAi = false;
+        console.error("AI Error:", err);
+        appendMessage('assistant', "Désolé, j'ai rencontré une erreur : " + err.message);
+      }
+    }
+
+    function handleAiResponse(text) {
+      const actions = text.match(/\[(.+?)\]/g) || [];
+      let cleanText = text.replace(/\[.+?\]/g, "").trim();
+      const bubble = appendMessage('assistant', cleanText);
+
+      const voiceBtn = bubble.querySelector('.voice-toggle');
+      toggleSpeak(cleanText, voiceBtn);
+
+      actions.forEach(act => {
+        const full = act.replace('[', '').replace(']', '');
+        const parts = full.split(':');
+        const cmd = parts[0];
+
+        if (cmd === 'SET_AI_NAME') {
+          localStorage.setItem("ai_name", parts[1]);
+          document.getElementById("aiNameDisplay").innerText = parts[1];
+        } else if (cmd === 'SET_USER_NAME') {
+          localStorage.setItem("user_name", parts[1]);
+        } else if (cmd === 'ACTION') {
+          const actType = parts[1];
+          if (actType === 'REDIRECT') {
+            let target = 'index.html';
+            if (parts[2] === 'HISTORY') target = 'history.html' + (parts[3] ? `?filter=${parts[3]}` : '');
+            else if (parts[2] === 'PLANIFICATIONS') target = 'index.html#planifications';
+            else if (parts[2] === 'WALLET') target = `wallet-detail.html?id=${parts[3]}`;
+            setTimeout(() => window.location.href = target, 2000);
+          } else if (actType === 'CREATE_WALLET') {
+            db.createWallet(parts[2], parts[3]);
+            showToast("Portefeuille créé 📁");
+          } else if (actType === 'DELETE_WALLET') {
+            db.deleteWallet(parseInt(parts[2]));
+            showToast("Portefeuille supprimé 🗑️");
+          } else if (actType === 'DEPOSIT' || actType === 'WITHDRAW') {
+            db.addTransaction(parseInt(parts[2].toString().replace('W', '')), parseInt(parts[3]), actType.toLowerCase(), parts[4] || "IA");
+            showToast(actType === 'DEPOSIT' ? "Dépôt effectué 💰" : "Retrait effectué 💸");
+          } else if (actType === 'CREATE_PLAN') {
+            db.createPlan({ walletId: parseInt(parts[2].toString().replace('W', '')), amount: parseFloat(parts[3]), type: parts[4], label: parts[5], description: parts[6], frequency: parts[7], dayValue: parseInt(parts[8]) });
+            showToast("Planification créée ✨");
+          } else if (actType === 'DELETE_PLAN') {
+            db.deletePlan(parseInt(parts[2]));
+            showToast("Planification supprimée 🗑️");
+          }
+        }
+      });
+    }
+
+    function showToast(text) {
+      const t = document.createElement('div');
+      t.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white px-6 py-3 rounded-full text-xs font-bold z-[300] backdrop-blur-sm shadow-2xl animate-bounce';
+      t.innerText = text;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    async function regenerateResponse() {
+      const history = await db.getChatHistory();
+      const lastUserMsg = history.reverse().find(m => m.role === 'user');
+      if (lastUserMsg) {
+        await db.deleteLastAssistantMessage();
+        // Supprimer la bulle assistant du DOM (la dernière)
+        const msgs = document.querySelectorAll('.assistant-container');
+        if (msgs.length > 0) msgs[msgs.length - 1].closest('.flex').remove();
+        sendMessage(lastUserMsg.text, true);
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      // On pourrait ajouter un petit toast ici
+    }
+
+    function appendMessage(role, text, id, isHistory = false) {
+      const container = document.getElementById("chatMessages");
+      const wrapper = document.createElement("div");
+      wrapper.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-4 group`;
+      wrapper.dataset.id = id;
+
+      // Retirer les boutons d'édition/régénération des anciens messages
+      if (role === 'user') {
+        document.querySelectorAll('.edit-btn').forEach(el => el.remove());
+        document.querySelectorAll('.send-edit').forEach(el => el.remove());
+      } else if (role === 'assistant') {
+        document.querySelectorAll('.regenerate-btn').forEach(el => el.remove());
+      }
+
+      if (role === 'assistant') {
+        wrapper.innerHTML = `
+          <div class="assistant-container">
+            <div class="assistant-body chat-bubble relative">
+                <button class="voice-toggle absolute -left-2 -top-2 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center active:scale-90 transition shadow-md border-2 border-white z-10 cursor-pointer">
+                    <i class="fa-solid fa-volume-high text-[10px]"></i>
+                </button>
+                <span class="typewriter-text"></span>
+            </div>
+            <div class="assistant-actions flex gap-3 mt-2 ml-4 transition-opacity">
+                <button onclick="copyToClipboard('${text.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-emerald-600 transition flex items-center gap-1"><i class="fa-solid fa-copy text-[10px]"></i> <span class="text-[9px] font-bold uppercase">Copier</span></button>
+                <button onclick="regenerateResponse()" class="regenerate-btn text-gray-400 hover:text-emerald-600 transition flex items-center gap-1"><i class="fa-solid fa-arrows-rotate text-[10px]"></i> <span class="text-[9px] font-bold uppercase">Relancer</span></button>
+            </div>
+          </div>
+        `;
+        const btn = wrapper.querySelector('.voice-toggle');
+        btn.onclick = () => toggleSpeak(text, btn);
+
+        const textContainer = wrapper.querySelector('.typewriter-text');
+
+        if (isHistory) {
+          // Affichage instantané sans animation pour l'historique
+          textContainer.innerText = text;
+        } else {
+          // Animation Typewriter synchronisée avec le TTS pour les nouveaux messages
+          let i = 0;
+          const words = text.split(' ');
+          let ttsStarted = false;
+
+          if (window.currentTypewriter) clearInterval(window.currentTypewriter);
+
+          window.currentTypewriter = setInterval(() => {
+            if (i < words.length) {
+              textContainer.innerText += (i === 0 ? '' : ' ') + words[i];
+              i++;
+              container.scrollTop = container.scrollHeight;
+            } else {
+              clearInterval(window.currentTypewriter);
+            }
+          }, 60);
+        }
+      } else {
+        wrapper.innerHTML = `
+          <div class="user-bubble chat-bubble relative select-none flex flex-col">
+            <span class="text-content outline-none">${text}</span>
+            <div class="edit-controls hidden mt-3 flex justify-end gap-2">
+                <button class="cancel-edit bg-white/20 text-white px-3 py-1.5 rounded-full text-[10px] font-bold uppercase hover:bg-white/30 transition">Annuler</button>
+                <button class="validate-edit bg-white text-emerald-600 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase shadow-sm hover:scale-105 transition">Valider</button>
+            </div>
+            <div class="edit-actions absolute -bottom-8 right-0 flex gap-3 transition-opacity">
+                <button class="copy-btn text-gray-400 hover:text-emerald-600 flex items-center gap-1"><i class="fa-solid fa-copy text-[10px]"></i> <span class="text-[9px] font-bold uppercase">Copier</span></button>
+                <button class="edit-btn text-gray-400 hover:text-emerald-600 flex items-center gap-1"><i class="fa-solid fa-pen text-[10px]"></i> <span class="text-[9px] font-bold uppercase">Éditer</span></button>
+            </div>
+          </div>
+        `;
+
+        const bubble = wrapper.querySelector('.user-bubble');
+        const textSpan = bubble.querySelector('.text-content');
+        const editControls = bubble.querySelector('.edit-controls');
+        const cancelBtn = bubble.querySelector('.cancel-edit');
+        const validateBtn = bubble.querySelector('.validate-edit');
+        const editBtn = bubble.querySelector('.edit-btn');
+        const copyBtn = bubble.querySelector('.copy-btn');
+
+        const startEdit = () => {
+          textSpan.contentEditable = true;
+          textSpan.focus();
+          // Place le curseur à la fin
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.selectNodeContents(textSpan);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          
+          bubble.classList.add('ring-2', 'ring-emerald-300');
+          editControls.classList.remove('hidden');
+        };
+
+        const stopEdit = () => {
+          textSpan.contentEditable = false;
+          bubble.classList.remove('ring-2', 'ring-emerald-300');
+          editControls.classList.add('hidden');
+        };
+
+        editBtn.onclick = startEdit;
+        copyBtn.onclick = () => copyToClipboard(text);
+
+        cancelBtn.onclick = () => {
+          textSpan.innerText = text; // Reset
+          stopEdit();
+        };
+
+        validateBtn.onclick = async () => {
+          const newText = textSpan.innerText.trim();
+          if (newText && newText !== text) {
+            // Supprimer la dernière réponse de l'assistant
+            await db.deleteLastAssistantMessage(); 
+            const msgs = document.querySelectorAll('.assistant-container');
+            if (msgs.length > 0) msgs[msgs.length - 1].closest('.flex').remove();
+            
+            // Mettre à jour le message utilisateur en base
+            if (id) {
+              await db.updateUserMessageText(id, newText);
+            }
+            
+            stopEdit();
+            
+            // Relancer avec le nouveau texte sans recréer de bulle utilisateur
+            sendMessage(newText, true);
+            
+            // Mettre à jour la variable locale pour les prochaines éditions
+            text = newText;
+          } else {
+            textSpan.innerText = text;
+            stopEdit();
+          }
+        };
+
+        let pressTimer;
+        bubble.onmousedown = () => pressTimer = window.setTimeout(startEdit, 800);
+        bubble.onmouseup = () => clearTimeout(pressTimer);
+        bubble.ontouchstart = () => pressTimer = window.setTimeout(startEdit, 800);
+        bubble.ontouchend = () => clearTimeout(pressTimer);
+      }
+      container.appendChild(wrapper);
+      container.scrollTop = container.scrollHeight;
+      return wrapper;
+    }
+
+    function showTyping(show) { document.getElementById("typingIndicator").style.display = show ? 'block' : 'none'; }
+    function toggleApiConfig() { const el = document.getElementById("apiConfig"); const s = document.getElementById("apiSheet"); if (el.classList.contains('hidden')) { el.classList.remove('hidden'); setTimeout(() => s.classList.remove('sheet-hidden'), 10); document.getElementById("apiKey").value = localStorage.getItem("assistant_api_key") || ""; updateProviderUI(); } else { s.classList.add('sheet-hidden'); setTimeout(() => el.classList.add('hidden'), 300); } }
+    function saveApi() { localStorage.setItem("assistant_api_key", document.getElementById("apiKey").value); toggleApiConfig(); }
+    function setProvider(p) { currentProvider = p; localStorage.setItem("ai_provider", p); updateProviderUI(); }
+    function updateProviderUI() { document.querySelectorAll('.provider-btn').forEach(b => b.classList.toggle('border-emerald-500', b.id === 'btn-' + currentProvider)); }
+    function toggleVoiceConfig() { const el = document.getElementById("voiceConfig"); const s = document.getElementById("voiceSheet"); if (el.classList.contains('hidden')) { el.classList.remove('hidden'); setTimeout(() => s.classList.remove('sheet-hidden'), 10); initVoices(); } else { s.classList.add('sheet-hidden'); setTimeout(() => el.classList.add('hidden'), 300); } }
+
+    window.onload = async () => {
+      await db.initDB();
+
+      // Réinitialisation unique demandée par l'utilisateur
+      if (!localStorage.getItem('chat_force_cleared_v2')) {
+        await db.clearChatHistory();
+        localStorage.setItem('chat_force_cleared_v2', 'true');
+        console.log("🧹 Historique réinitialisé (Action Unique).");
+      }
+
+      const hist = await db.getChatHistory();
+
+      const aiName = localStorage.getItem("ai_name");
+      if (aiName) document.getElementById("aiNameDisplay").innerText = aiName;
+
+      if (hist.length === 0) {
+        const intro = "Bonjour ! Je suis votre assistant financier. Avant de commencer, comment vous appelez-vous et quel nom souhaiteriez-vous me donner ?";
+        appendMessage('assistant', intro);
+        setTimeout(() => toggleSpeak(intro, null), 1000);
+      } else {
+        hist.forEach(m => appendMessage(m.role, m.text, m.id, true));
+      }
+      
+      // Plusieurs tentatives pour charger les voix en ligne (nécessaire sur certains navigateurs)
+      initVoices();
+      setTimeout(initVoices, 100);
+      setTimeout(initVoices, 500);
+      setTimeout(initVoices, 2000);
+      
+      console.log("💬 Chat History Loaded and Persistent.");
+    };
+    
+    // SCROLL LOGIC
+    const chatContainer = document.getElementById("chatMessages");
+    const scrollTopBtn = document.getElementById("scrollTopBtn");
+
+    chatContainer.addEventListener('scroll', () => {
+      // Show button when user has scrolled down more than 300px
+      if (chatContainer.scrollTop > 300) {
+        scrollTopBtn.classList.add('visible');
+      } else {
+        scrollTopBtn.classList.remove('visible');
+      }
+    });
+
+    window.scrollToTop = () => {
+      chatContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // NAVIGATION LOGIC
+    window.nav = (url) => {
+      window.location.href = `chargement.html?to=${url}`;
+    };
+  </script>
+  <script src="tutorial.js"></script>
+</body>
+
+</html>

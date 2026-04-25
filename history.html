@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Historique Global</title>
+  <script src="js/tailwind.js"></script>
+  <link rel="stylesheet" href="fontawesome/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    html { -webkit-text-size-adjust: none; text-size-adjust: none; }
+
+    /* Overlay Animation */
+    .overlay-in { animation: overlayIn 0.25s ease-out forwards; }
+    @keyframes overlayIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Group header sticky */
+    .date-group-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+  <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl flex flex-col">
+
+    <!-- STICKY TOP CONTAINER -->
+    <div class="sticky top-0 z-30 bg-white shadow-sm">
+      <!-- HEADER -->
+      <div class="bg-emerald-600 text-white p-6 rounded-b-[40px] shadow-lg relative overflow-hidden">
+        <!-- Decoration circles -->
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl"></div>
+        
+        <div class="flex items-center justify-between mb-6 relative z-10">
+          <div class="flex items-center gap-4">
+            <button onclick="nav('index.html')" class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center active:scale-90 transition backdrop-blur-sm border border-white/10">
+              <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <div>
+              <h1 class="text-xl font-bold tracking-tight">Historique Global</h1>
+              <p class="text-emerald-100/70 text-[9px] font-bold uppercase tracking-widest">Tous les portefeuilles</p>
+            </div>
+          </div>
+          <div class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm border border-white/10">
+            <span id="totalCount" class="text-[10px] font-black tracking-widest uppercase">0 OPÉ.</span>
+          </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-2 gap-3 relative z-10">
+          <div class="col-span-2 bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/5 flex justify-between items-center">
+            <div>
+              <p class="text-emerald-100/60 text-[9px] font-black uppercase tracking-widest mb-1">Flux Net Total</p>
+              <h2 id="totalNet" class="text-3xl font-black tabular-nums tracking-tight">0 FCFA</h2>
+            </div>
+            <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border border-white/10">
+              <i class="fa-solid fa-chart-line text-xl"></i>
+            </div>
+          </div>
+          
+          <div class="bg-emerald-500/30 rounded-2xl p-3 border border-white/5">
+            <p class="text-emerald-100/70 text-[8px] font-black uppercase tracking-widest mb-1">Total Entrées</p>
+            <p id="totalIn" class="text-lg font-black tabular-nums text-white">0 FCFA</p>
+          </div>
+          
+          <div class="bg-red-400/20 rounded-2xl p-3 border border-white/5">
+            <p class="text-red-100/70 text-[8px] font-black uppercase tracking-widest mb-1">Total Sorties</p>
+            <p id="totalOut" class="text-lg font-black tabular-nums text-white">0 FCFA</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="px-6 pt-6 pb-4 flex gap-2 overflow-x-auto scrollbar-hide">
+        <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap bg-gray-800 text-white">Tout</button>
+        <button onclick="setFilter('deposit')" id="filter-deposit" class="filter-btn px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap bg-gray-100 text-gray-500">Entrées</button>
+        <button onclick="setFilter('withdrawal')" id="filter-withdrawal" class="filter-btn px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap bg-gray-100 text-gray-500">Sorties</button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 overflow-y-auto scrollbar-hide pb-28">
+      <div id="historyContent" class="px-6 pt-4 space-y-1">
+        <!-- Skeleton loading -->
+        <div class="animate-pulse bg-gray-100 h-5 w-24 rounded-full mb-3"></div>
+        <div class="animate-pulse bg-gray-50 h-16 rounded-[24px] mb-2"></div>
+        <div class="animate-pulse bg-gray-50 h-16 rounded-[24px] mb-2"></div>
+        <div class="animate-pulse bg-gray-100 h-5 w-20 rounded-full mt-5 mb-3"></div>
+        <div class="animate-pulse bg-gray-50 h-16 rounded-[24px] mb-2"></div>
+      </div>
+    </div>
+
+    <!-- DESCRIPTION OVERLAY -->
+    <div id="descOverlay" style="display:none" class="fixed inset-0 z-[200] items-center justify-center p-6">
+      <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeDesc()"></div>
+      <div class="bg-white rounded-[32px] p-8 shadow-2xl relative max-w-sm w-full border border-gray-100 overlay-in">
+        <button onclick="closeDesc()" class="absolute top-4 right-4 w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center active:scale-90 transition shadow-sm">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-2 h-6 bg-emerald-500 rounded-full"></div>
+          <h4 class="text-gray-400 text-[10px] font-black uppercase tracking-widest">Description complète</h4>
+        </div>
+        <div id="descFullText" class="text-gray-700 text-sm font-medium leading-relaxed max-h-56 overflow-y-auto scrollbar-hide"></div>
+      </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-t-[30px] shadow-2xl">
+      <button onclick="nav('index.html')" class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+        <div class="p-2">
+          <i class="fa-solid fa-house-chimney text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Accueil</span>
+      </button>
+      <button onclick="goToLastWallet()" class="text-gray-400 flex flex-col items-center gap-1.5 transition-all opacity-70">
+        <div class="p-2">
+          <i class="fa-solid fa-wallet text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Wallets</span>
+      </button>
+      <button class="text-emerald-600 flex flex-col items-center gap-1.5 transition-all">
+        <div class="bg-emerald-50 p-2 rounded-xl">
+          <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+        </div>
+        <span class="text-[9px] font-black uppercase tracking-widest">Historique</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // INLINED DB LOGIC
+    // ==========================================
+    window.db = (function() {
+      let dbInstance = null;
+      async function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open("PortefeuilleDB", 4);
+          request.onupgradeneeded = (e) => {
+            const d = e.target.result;
+            if (!d.objectStoreNames.contains("wallets")) d.createObjectStore("wallets", { keyPath: "id", autoIncrement: true });
+            if (!d.objectStoreNames.contains("transactions")) d.createObjectStore("transactions", { keyPath: "id", autoIncrement: true }).createIndex("walletId", "walletId", { unique: false });
+            if (!d.objectStoreNames.contains("planifications")) d.createObjectStore("planifications", { keyPath: "id", autoIncrement: true }).createIndex("walletId", "walletId", { unique: false });
+          };
+          request.onsuccess = (e) => { dbInstance = e.target.result; resolve(dbInstance); };
+          request.onerror = (e) => reject(e.target.error);
+        });
+      }
+      async function getDB() { if (dbInstance) return dbInstance; return await initDB(); }
+      async function getAllWallets() {
+        const d = await getDB();
+        return new Promise(r => d.transaction("wallets","readonly").objectStore("wallets").getAll().onsuccess = e => r(e.target.result));
+      }
+      async function getAllTransactions() {
+        const d = await getDB();
+        return new Promise(r => d.transaction("transactions","readonly").objectStore("transactions").getAll().onsuccess = e => r(e.target.result));
+      }
+      return { initDB, getAllWallets, getAllTransactions };
+    })();
+
+    // ==========================================
+    // APP LOGIC
+    // ==========================================
+    window._desc = [];
+    window._trunc = (t, n = 38) => t && t.length > n ? t.slice(0, n) + '...' : (t || '');
+
+    let allTransactions = [];
+    let walletMap = {};
+    let currentFilter = 'all';
+
+    window.onload = async () => {
+      await db.initDB();
+      const wallets = await db.getAllWallets();
+      walletMap = {};
+      wallets.forEach(w => walletMap[w.id] = w);
+
+      allTransactions = await db.getAllTransactions();
+      // Sort newest first
+      allTransactions.sort((a, b) => b.date - a.date);
+
+      renderStats();
+      renderHistory();
+    };
+
+    function renderStats() {
+      const totalIn  = allTransactions.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
+      const totalOut = allTransactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0);
+      const totalNet = totalIn - totalOut;
+
+      document.getElementById('totalIn').textContent    = totalIn.toLocaleString('fr-FR') + ' FCFA';
+      document.getElementById('totalOut').textContent   = totalOut.toLocaleString('fr-FR') + ' FCFA';
+      document.getElementById('totalNet').textContent   = totalNet.toLocaleString('fr-FR') + ' FCFA';
+      document.getElementById('totalCount').textContent = allTransactions.length + ' OPÉ.';
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-800', 'text-white', 'bg-emerald-600', 'bg-red-500');
+        btn.classList.add('bg-gray-100', 'text-gray-500');
+      });
+      const activeBtn = document.getElementById('filter-' + f);
+      activeBtn.classList.remove('bg-gray-100', 'text-gray-500');
+      if (f === 'deposit') {
+        activeBtn.classList.add('bg-emerald-600', 'text-white');
+      } else if (f === 'withdrawal') {
+        activeBtn.classList.add('bg-red-500', 'text-white');
+      } else {
+        activeBtn.classList.add('bg-gray-800', 'text-white');
+      }
+      renderHistory();
+    }
+
+    function renderHistory() {
+      window._desc = [];
+      const container = document.getElementById('historyContent');
+
+      const filtered = currentFilter === 'all'
+        ? allTransactions
+        : allTransactions.filter(t => t.type === currentFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-20 text-center">
+            <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fa-solid fa-clock-rotate-left text-gray-200 text-3xl"></i>
+            </div>
+            <p class="text-gray-400 text-sm font-bold">Aucune transaction</p>
+            <p class="text-gray-300 text-xs font-medium mt-1">L'historique apparaîtra ici</p>
+          </div>`;
+        return;
+      }
+
+      // Group by day
+      const groups = {};
+      filtered.forEach(t => {
+        const d = new Date(t.date);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(t);
+      });
+
+      const today     = new Date(); today.setHours(0,0,0,0);
+      const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+      let html = '';
+      Object.entries(groups).forEach(([dateKey, txList]) => {
+        const groupDate = new Date(dateKey);
+        groupDate.setHours(0,0,0,0);
+
+        let label;
+        if (groupDate.getTime() === today.getTime()) {
+          label = "Aujourd'hui";
+        } else if (groupDate.getTime() === yesterday.getTime()) {
+          label = "Hier";
+        } else {
+          label = groupDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+          label = label.charAt(0).toUpperCase() + label.slice(1);
+        }
+
+        // Day total
+        const dayIn  = txList.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
+        const dayOut = txList.filter(t => t.type === 'withdrawal').reduce((s, t) => s + t.amount, 0);
+        const dayNet = dayIn - dayOut;
+
+        html += `
+          <div class="mb-6">
+            <div class="date-group-header bg-white/80 flex items-center justify-between py-2 mb-3">
+              <span class="text-[11px] font-black text-gray-500 uppercase tracking-widest">${label}</span>
+              <span class="text-[11px] font-black ${dayNet >= 0 ? 'text-emerald-500' : 'text-red-400'} tabular-nums">
+                ${dayNet >= 0 ? '+' : ''}${dayNet.toLocaleString('fr-FR')} FCFA
+              </span>
+            </div>
+            <div class="space-y-3">`;
+
+        txList.forEach(t => {
+          const wallet = walletMap[t.walletId];
+          const walletName = wallet ? wallet.name : 'Wallet supprimé';
+          const mainLabel = t.type === 'deposit' ? 'Dépôt' : 'Retrait';
+          const subLabel = t.reason || '';
+          const descIdx = t.reason ? (window._desc.push(t.reason) - 1) : -1;
+          const time = new Date(t.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+          html += `
+            <div class="bg-white border border-gray-100 shadow-sm rounded-[24px] p-4 flex items-center justify-between active:bg-gray-50 transition-all">
+              <div class="flex gap-3 items-center min-w-0 flex-1">
+                <div class="w-11 h-11 ${t.type === 'deposit' ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-400'} rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <i class="fa-solid ${t.type === 'deposit' ? 'fa-arrow-up' : 'fa-arrow-down'} text-base"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-gray-800 text-sm leading-none mb-1 truncate">${mainLabel}</p>
+                  ${subLabel ? `<p class="text-[10px] font-bold text-gray-400 cursor-pointer" onclick="event.stopPropagation(); showDescription(_desc[${descIdx}])" style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-decoration:underline;text-decoration-color:rgba(156,163,175,0.4)">${_trunc(subLabel, 38)}</p>` : ''}
+                  <div class="flex items-center gap-1.5 mt-1">
+                    <span class="bg-gray-100 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded-full truncate max-w-[100px]">${walletName}</span>
+                    <span class="text-gray-300 text-[9px] font-bold">${time}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right ml-3 flex-shrink-0">
+                <p class="font-bold text-sm ${t.type === 'deposit' ? 'text-emerald-600' : 'text-red-500'} tabular-nums">
+                  ${t.type === 'deposit' ? '+' : '-'}${t.amount.toLocaleString('fr-FR')}
+                </p>
+                <p class="text-[8px] font-bold text-gray-300 uppercase">FCFA</p>
+              </div>
+            </div>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    window.showDescription = (text) => {
+      document.getElementById("descFullText").textContent = text;
+      document.getElementById("descOverlay").style.display = 'flex';
+    };
+    window.closeDesc = () => { document.getElementById("descOverlay").style.display = 'none'; };
+
+    window.nav = (url) => {
+      window.location.href = `chargement.html?to=${url}`;
+    };
+
+    window.goToLastWallet = () => {
+      const id = localStorage.getItem('lastWalletId');
+      if (id) nav(`wallet-detail.html?id=${id}`);
+      else nav('index.html');
+    };
+  </script>
+  <script src="tutorial.js"></script>
+</body>
+</html>
