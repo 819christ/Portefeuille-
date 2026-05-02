@@ -146,23 +146,37 @@ const Download = () => {
             </p>
           </div>
 
-          {!isInstalled ? (
-            <button 
-              onClick={handleInstall}
-              className="w-full bg-emerald-600 text-white py-5 rounded-[32px] font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-3"
-            >
-              <i className="fa-solid fa-cloud-arrow-down"></i>
-              Installer l'App
-            </button>
-          ) : (
-            <div className="bg-emerald-50 w-full p-4 rounded-[28px] border border-emerald-100 flex items-center justify-center gap-3">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
-                <i className="fa-solid fa-check text-xs"></i>
+            {!isInstalled ? (
+              <button 
+                onClick={handleInstall}
+                className="w-full bg-emerald-600 text-white py-5 rounded-[32px] font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-200 active:scale-95 transition-all flex items-center justify-center gap-3"
+              >
+                <i className="fa-solid fa-cloud-arrow-down"></i>
+                Installer la PWA
+              </button>
+            ) : (
+              <div className="bg-emerald-50 w-full p-4 rounded-[28px] border border-emerald-100 flex items-center justify-center gap-3">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-emerald-600 shadow-sm">
+                  <i className="fa-solid fa-check text-xs"></i>
+                </div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">PWA Installée</span>
               </div>
-              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Déjà installé</span>
+            )}
+
+            <div className="w-full pt-2 flex flex-col items-center gap-4">
+              <div className="w-full h-px bg-gray-100"></div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ou télécharger l'APK direct</p>
+              <a 
+                href="/downloads/portefeuille.apk" 
+                download="portefeuille.apk"
+                className="w-full bg-gray-900 text-white py-5 rounded-[32px] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+              >
+                <i className="fa-solid fa-android text-emerald-500"></i>
+                Télécharger l'APK
+              </a>
+              <p className="text-[9px] text-gray-400 font-medium italic">Recommandé pour une expérience native complète</p>
             </div>
-          )}
-        </div>
+          </div>
 
         {/* DYNAMIC SECTIONS */}
         <div className="space-y-4 pt-4">
