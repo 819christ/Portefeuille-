@@ -247,7 +247,7 @@ const AIAgent = () => {
             }}
             style={{
               position: 'absolute',
-              bottom: '88px',
+              bottom: 'calc(88px + env(safe-area-inset-bottom))',
               left: '20px',
               zIndex: 50,
             }}

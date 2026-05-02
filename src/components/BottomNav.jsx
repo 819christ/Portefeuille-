@@ -14,7 +14,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-6 left-6 right-6 max-w-md mx-auto bg-white/95 backdrop-blur-xl border border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.1)]" style={{ width: 'calc(100% - 3rem)' }}>
+    <div className="fixed left-6 right-6 max-w-md mx-auto bg-white/95 backdrop-blur-xl border border-gray-100 px-6 py-3 flex justify-around items-center z-50 rounded-[28px] shadow-[0_10px_40px_rgba(0,0,0,0.1)]" style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))', width: 'calc(100% - 3rem)' }}>
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (

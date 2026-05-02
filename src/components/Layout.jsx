@@ -23,7 +23,7 @@ const Layout = ({ children }) => {
       </main>
 
       {/* Navigation Bar */}
-      <nav className="absolute bottom-0 left-0 right-0 w-full bg-white/90 backdrop-blur-2xl border-t border-gray-100 px-6 py-5 flex justify-around items-center z-50 rounded-t-[32px] shadow-[0_-15px_50px_rgba(0,0,0,0.08)]">
+      <nav className="absolute bottom-0 left-0 right-0 w-full bg-white/90 backdrop-blur-2xl border-t border-gray-100 px-6 pt-5 flex justify-around items-center z-50 rounded-t-[32px] shadow-[0_-15px_50px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
         {navItems.map((item) => (
           <button
             key={item.path}
