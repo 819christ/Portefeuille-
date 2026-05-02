@@ -32,7 +32,7 @@ function App() {
   return (
     <>
       {showSplash && <Splash onComplete={handleSplashComplete} />}
-      <Router>
+      <Router basename={import.meta.env.BASE_URL}>
         <Tutorial />
         <Layout>
           <Routes>
