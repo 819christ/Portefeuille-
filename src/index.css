@@ -1,0 +1,204 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', sans-serif;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  @apply bg-gray-50 h-screen overflow-hidden select-none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.btn-active:active {
+  transform: scale(0.96);
+}
+
+.balance-masked {
+  letter-spacing: 0.1em;
+  font-family: inherit;
+}
+
+/* Bottom Sheet Animation */
+#actionSheet {
+  transition: visibility 0.3s, opacity 0.3s;
+}
+
+#actionSheetContent {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sheet-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sheet-content-hidden {
+  transform: translateY(100%);
+}
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  min-width: 150px;
+  display: none;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.context-menu.active {
+  display: block;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Select Styles */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Overlay Animation */
+.overlay-in {
+  animation: overlayIn 0.3s ease-out forwards;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading Splash Screen */
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-out, visibility 0.5s;
+}
+
+.splash-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mesh-gradient {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, rgba(52, 211, 153, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, rgba(5, 150, 105, 0.08) 0, transparent 50%), 
+    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.08) 0, transparent 50%);
+}
+
+.progress-bar-splash {
+  height: 4px;
+  width: 200px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.progress-bar-splash div {
+  height: 100%;
+  background: #10b981;
+  width: 0;
+  animation: progress-splash 2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes progress-splash {
+  to { width: 100%; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.splash-content {
+  animation: fade-in-up 1s ease-out forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+.mesh-gradient-splash {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, rgba(52, 211, 153, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, rgba(5, 150, 105, 0.08) 0, transparent 50%), 
+    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.08) 0, transparent 50%);
+  z-index: -1;
+}
+
+.glass-card-splash {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 48px;
+  box-shadow: 0 25px 50px -12px rgba(5, 150, 105, 0.1);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  transform: translateY(0);
+  animation: splash-float 4s infinite ease-in-out;
+}
+
+@keyframes splash-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shine-splash { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.progress-bar-splash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shine-splash 1s infinite linear;
+}
+
+.pulse-soft {
+  animation: pulse-soft 3s infinite ease-in-out;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.95; }
+}

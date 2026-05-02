@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+:root {
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-700: #047857;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #f8fafc;
+  font-family: 'Outfit', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.btn-active:active {
+  transform: scale(0.96);
+}
+
+.balance-masked {
+  letter-spacing: 0.1em;
+  font-family: inherit;
+}
+
+/* Bottom Sheet Animation */
+.sheet-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sheet-content-hidden {
+  transform: translateY(100%);
+}
+
+#actionSheet {
+  transition: visibility 0.3s, opacity 0.3s;
+}
+
+#actionSheetContent {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  z-index: 100;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  min-width: 150px;
+  display: none;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.context-menu.active {
+  display: block;
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Overlay Animation */
+.overlay-in {
+  animation: overlayIn 0.3s ease-out forwards;
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Splash Screen */
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease-out, visibility 0.5s;
+}
+
+.splash-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mesh-gradient {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, rgba(52, 211, 153, 0.08) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, rgba(5, 150, 105, 0.08) 0, transparent 50%), 
+    radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.08) 0, transparent 50%);
+}
+
+.progress-bar-splash {
+  height: 4px;
+  width: 200px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.progress-bar-splash div {
+  height: 100%;
+  background: #10b981;
+  width: 0;
+  animation: progress-splash 2s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes progress-splash {
+  to { width: 100%; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.splash-content {
+  animation: fade-in-up 1s ease-out forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Premium Enhancements */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.active-nav-item {
+  color: #059669;
+}
+
+.active-nav-item .nav-icon-container {
+  background-color: #ecfdf5;
+}
+
+/* Logo Fixes */
+.logo-no-bg {
+  mix-blend-mode: multiply;
+  filter: contrast(110%);
+}
+
+/* Assistant UI Styles */
+.chat-bubble {
+  border-radius: 28px;
+  max-width: 90%;
+  position: relative;
+}
+
+.assistant-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assistant-header {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}
+
+.assistant-body {
+  background: #f3f4f6;
+  border-radius: 28px;
+  border-bottom-left-radius: 4px;
+  padding: 20px;
+  color: #1f2937;
+  font-weight: 600;
+  line-height: 1.6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.user-bubble {
+  background: #059669;
+  color: white;
+  border-radius: 28px;
+  border-bottom-right-radius: 4px;
+  padding: 16px 20px;
+  font-weight: 700;
+  align-self: flex-end;
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);
+}
+
+.typing-dot {
+  animation: typing 1s infinite;
+}
+
+@keyframes typing {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.config-sheet {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes agent-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(110, 231, 183, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(110, 231, 183, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(110, 231, 183, 0);
+  }
+}
+
+.speaking-pulse {
+  animation: agent-pulse 1.5s infinite;
+  cursor: pointer;
+}
