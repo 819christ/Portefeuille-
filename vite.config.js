@@ -5,20 +5,20 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/Portefeuille-/',
   plugins: [
     react(), 
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'FinanceFlow',
-        short_name: 'FinanceFlow',
+        name: 'Portefeuille',
+        short_name: 'Portefeuille',
         description: 'Gestion intelligente de vos finances personnelles',
-        theme_color: '#059669',
+        theme_color: '#10b981',
         background_color: '#f8fafc',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/Portefeuille-/',
         icons: [
           {
             src: 'assets/icon-192.png',
