@@ -15,7 +15,7 @@ const Splash = ({ onComplete }) => {
   return (
     <div className={`splash-overlay ${hidden ? 'splash-hidden' : ''}`}>
       <div className="mesh-gradient"></div>
-      <div className="splash-content">
+      <div className="splash-content" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[32px] flex items-center justify-center shadow-2xl mb-6">
           <i className="fa-solid fa-wallet text-4xl text-white"></i>
         </div>

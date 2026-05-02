@@ -17,8 +17,11 @@ const Layout = ({ children }) => {
 
   return (
     <div className="max-w-md mx-auto w-full bg-white h-screen shadow-xl flex flex-col relative overflow-hidden">
+      {/* Top Safe Area Spacer */}
+      <div style={{ height: 'env(safe-area-inset-top)', minHeight: '10px' }} className="w-full bg-white shrink-0"></div>
+
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto flex flex-col relative scrollbar-hide pb-32">
+      <main className="flex-1 overflow-y-auto flex flex-col relative scrollbar-hide pb-36 pt-4">
         {children}
       </main>
 
