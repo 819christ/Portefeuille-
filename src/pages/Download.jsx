@@ -167,7 +167,7 @@ const Download = () => {
               <div className="w-full h-px bg-gray-100"></div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ou télécharger l'APK direct</p>
               <a 
-                href={`${import.meta.env.BASE_URL}downloads/app-debug.apk`} 
+                href={`${import.meta.env.BASE_URL}portefeuille.apk`} 
                 download="portefeuille.apk"
                 className="w-full bg-gray-900 text-white py-5 rounded-[32px] font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
               >
